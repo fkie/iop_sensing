@@ -1,0 +1,7 @@
+<library path="libiop_costmap2d_fkie">
+  <class name="urn:jaus:jss:iop:CostMap2D_1_0" type="iop::CostMap2DPlugin_1_0" base_class_type="iop::PluginInterface">
+    <description>
+      IOP CostMap2D Service Plugin
+    </description>
+  </class>
+</library>
