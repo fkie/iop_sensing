@@ -28,15 +28,15 @@ along with this program; or you can read the full license at
 #include "InternalEvents/InternalEventHandler.h"
 #include "Transport/JausTransport.h"
 #include "JTSStateMachine.h"
-#include "urn_jaus_jss_iop_CostMap2D_1_0/Messages/MessageSet.h"
-#include "urn_jaus_jss_iop_CostMap2D_1_0/InternalEvents/InternalEventsSet.h"
+#include "urn_jaus_jss_iop_CostMap2D/Messages/MessageSet.h"
+#include "urn_jaus_jss_iop_CostMap2D/InternalEvents/InternalEventsSet.h"
 
-typedef JTS::Receive_1_0 Receive;
-typedef JTS::Send_1_0 Send;
+typedef JTS::Receive Receive;
+typedef JTS::Send Send;
 
-#include "urn_jaus_jss_core_Transport_1_0/Transport_ReceiveFSM.h"
-#include "urn_jaus_jss_core_Events_1_0/Events_ReceiveFSM.h"
-#include "urn_jaus_jss_core_AccessControl_1_0/AccessControl_ReceiveFSM.h"
+#include "urn_jaus_jss_core_Transport/Transport_ReceiveFSM.h"
+#include "urn_jaus_jss_core_Events/Events_ReceiveFSM.h"
+#include "urn_jaus_jss_core_AccessControl/AccessControl_ReceiveFSM.h"
 
 
 #include "CostMap2D_ReceiveFSM_sm.h"
@@ -47,13 +47,13 @@ typedef JTS::Send_1_0 Send;
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 
-namespace urn_jaus_jss_iop_CostMap2D_1_0
+namespace urn_jaus_jss_iop_CostMap2D
 {
 
 class DllExport CostMap2D_ReceiveFSM : public JTS::StateMachine
 {
 public:
-	CostMap2D_ReceiveFSM(urn_jaus_jss_core_Transport_1_0::Transport_ReceiveFSM* pTransport_ReceiveFSM, urn_jaus_jss_core_Events_1_0::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_AccessControl_1_0::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM);
+	CostMap2D_ReceiveFSM(urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM);
 	virtual ~CostMap2D_ReceiveFSM();
 
 	/// Handle notifications on parent state changes
@@ -79,9 +79,9 @@ public:
 protected:
 
     /// References to parent FSMs
-	urn_jaus_jss_core_Transport_1_0::Transport_ReceiveFSM* pTransport_ReceiveFSM;
-	urn_jaus_jss_core_Events_1_0::Events_ReceiveFSM* pEvents_ReceiveFSM;
-	urn_jaus_jss_core_AccessControl_1_0::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM;
+	urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM;
+	urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM;
+	urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM;
 
 	tf::TransformListener* tfListener;
 	std::string p_tf_frame_odom;

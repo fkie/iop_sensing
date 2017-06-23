@@ -21,19 +21,19 @@ along with this program; or you can read the full license at
 /** \author Alexander Tiderko */
 
 
-#include "urn_jaus_jss_iop_CostMap2D_1_0/CostMap2D_ReceiveFSM.h"
+#include "urn_jaus_jss_iop_CostMap2D/CostMap2D_ReceiveFSM.h"
 
 
 
 
 using namespace JTS;
 
-namespace urn_jaus_jss_iop_CostMap2D_1_0
+namespace urn_jaus_jss_iop_CostMap2D
 {
 
 
 
-CostMap2D_ReceiveFSM::CostMap2D_ReceiveFSM(urn_jaus_jss_core_Transport_1_0::Transport_ReceiveFSM* pTransport_ReceiveFSM, urn_jaus_jss_core_Events_1_0::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_AccessControl_1_0::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM)
+CostMap2D_ReceiveFSM::CostMap2D_ReceiveFSM(urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM)
 {
 
 	/*
