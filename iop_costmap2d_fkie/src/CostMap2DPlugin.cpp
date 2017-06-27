@@ -21,7 +21,7 @@ along with this program; or you can read the full license at
 /** \author Alexander Tiderko */
 
 #include <pluginlib/class_list_macros.h>
-#include <CostMap2DPlugin.h>
+#include "CostMap2DPlugin.h"
 
 using namespace iop;
 using namespace urn_jaus_jss_iop_CostMap2D ;

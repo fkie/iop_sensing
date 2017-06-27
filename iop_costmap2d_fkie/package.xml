@@ -2,7 +2,7 @@
 <package>
   <name>iop_costmap2d_fkie</name>
   <version>1.1.0</version>
-  <description>The ROS costmap is translated by this service to the JAUS network</description>
+  <description>ROS costmap is translated by this service to the JAUS network</description>
   <maintainer email="alexander.tiderko@fkie.fraunhofer.de">Alexander Tiderko</maintainer>
   <license>GPLv2</license>
   <url type="website">https://github.com/fkie/iop_sensing</url>
