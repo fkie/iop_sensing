@@ -71,6 +71,7 @@ void CostMap2D_ReceiveFSM::setupNotifications()
 	registerNotification("Receiving_Ready", pAccessControl_ReceiveFSM->getHandler(), "InternalStateChange_To_AccessControl_ReceiveFSM_Receiving_Ready", "CostMap2D_ReceiveFSM");
 	registerNotification("Receiving", pAccessControl_ReceiveFSM->getHandler(), "InternalStateChange_To_AccessControl_ReceiveFSM_Receiving", "CostMap2D_ReceiveFSM");
 
+	pEvents_ReceiveFSM->get_event_handler().register_query(QueryCostMap2D::ID);
 	ros::NodeHandle pnh("~");
 	pnh.param<std::string>("frame_odom", p_tf_frame_odom, p_tf_frame_odom);
 	pnh.param<std::string>("frame_robot", p_tf_frame_robot, p_tf_frame_robot);
@@ -227,7 +228,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		// set map
 		p_costmap_msg = map;
 		ROS_DEBUG_NAMED("CostMap2D", "Forward the map with origin %.2f, %.2f, yaw: %.2f", tf_pose.getOrigin().getX(), tf_pose.getOrigin().getY(), map_yaw);
-		this->pEvents_ReceiveFSM->set_event_report(0xd738, p_costmap_msg);
+		pEvents_ReceiveFSM->get_event_handler().set_report(QueryCostMap2D::ID, &p_costmap_msg);
 	} catch (tf::TransformException& ex) {
 		ROS_WARN_NAMED("CostMap2D", "TF Exception %s", ex.what());
 	}
