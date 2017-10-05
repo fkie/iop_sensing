@@ -22,7 +22,7 @@ along with this program; or you can read the full license at
 
 
 #include "urn_jaus_jss_iop_CostMap2D/CostMap2D_ReceiveFSM.h"
-
+#include <iop_component_fkie/iop_config.h>
 
 
 
@@ -72,23 +72,16 @@ void CostMap2D_ReceiveFSM::setupNotifications()
 	registerNotification("Receiving", pAccessControl_ReceiveFSM->getHandler(), "InternalStateChange_To_AccessControl_ReceiveFSM_Receiving", "CostMap2D_ReceiveFSM");
 
 	pEvents_ReceiveFSM->get_event_handler().register_query(QueryCostMap2D::ID);
-	ros::NodeHandle pnh("~");
-	pnh.param<std::string>("frame_odom", p_tf_frame_odom, p_tf_frame_odom);
-	pnh.param<std::string>("frame_robot", p_tf_frame_robot, p_tf_frame_robot);
-	std::string prefix = tf::getPrefixParam(pnh);
-	p_tf_frame_odom = tf::resolve(prefix, p_tf_frame_odom);
-	p_tf_frame_robot = tf::resolve(prefix, p_tf_frame_robot);
-	pnh.param("offset_yaw", offset_yaw, offset_yaw);
-	pnh.param("map_max_edge_size", p_map_max_edge_size, p_map_max_edge_size);
-	ROS_INFO("used parameter:");
-	ROS_INFO("  frame_odom: %s", p_tf_frame_odom.c_str());
-	ROS_INFO("  frame_robot: %s", p_tf_frame_robot.c_str());
-	ROS_INFO("  offset_yaw: %f", offset_yaw);
-	ROS_INFO("  map_max_edge_size: %d", p_map_max_edge_size);
-
-	ros::NodeHandle public_nh;
+	iop::Config cfg("~CostMap2D");
+	cfg.param<std::string>("frame_odom", p_tf_frame_odom, p_tf_frame_odom);
+	cfg.param<std::string>("frame_robot", p_tf_frame_robot, p_tf_frame_robot);
+//	std::string prefix = tf::getPrefixParam(pnh);
+//	p_tf_frame_odom = tf::resolve(prefix, p_tf_frame_odom);
+//	p_tf_frame_robot = tf::resolve(prefix, p_tf_frame_robot);
+	cfg.param("offset_yaw", offset_yaw, offset_yaw);
+	cfg.param("map_max_edge_size", p_map_max_edge_size, p_map_max_edge_size);
 	//ROS subscriber:
-	costmap_sub = public_nh.subscribe<nav_msgs::OccupancyGrid>("map", 1, &CostMap2D_ReceiveFSM::pMapCallback, this);
+	costmap_sub = cfg.subscribe<nav_msgs::OccupancyGrid>("map", 1, &CostMap2D_ReceiveFSM::pMapCallback, this);
 
 }
 
