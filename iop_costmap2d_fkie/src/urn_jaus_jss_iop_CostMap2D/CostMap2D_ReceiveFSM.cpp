@@ -73,8 +73,8 @@ void CostMap2D_ReceiveFSM::setupNotifications()
 
 	pEvents_ReceiveFSM->get_event_handler().register_query(QueryCostMap2D::ID);
 	iop::Config cfg("~CostMap2D");
-	cfg.param<std::string>("frame_odom", p_tf_frame_odom, p_tf_frame_odom);
-	cfg.param<std::string>("frame_robot", p_tf_frame_robot, p_tf_frame_robot);
+	cfg.param<std::string>("tf_frame_odom", p_tf_frame_odom, p_tf_frame_odom);
+	cfg.param<std::string>("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
 //	std::string prefix = tf::getPrefixParam(pnh);
 //	p_tf_frame_odom = tf::resolve(prefix, p_tf_frame_odom);
 //	p_tf_frame_robot = tf::resolve(prefix, p_tf_frame_robot);
