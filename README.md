@@ -4,9 +4,9 @@ See [iop_core](https://github.com/fkie/iop_core/blob/master/README.md) for use i
 
 List of service plugins in this repository:
 
-[iop_costmap2d_fkie: CostMap2D](#iop_costmap2d_fkie-CostMap2D)  
-[iop_measurement_sensor_fkie: MeasurementSensor](#iop_measurement_sensor_fkie-MeasurementSensor)  
-[iop_path_reporter_fkie: PathReporter](#iop_path_reporter_fkie-PathReporter)  
+[iop_costmap2d_fkie: CostMap2D](#iop_costmap2d_fkie-costmap2d)  
+[iop_measurement_sensor_fkie: MeasurementSensor](#iop_measurement_sensor_fkie-measurementsensor)  
+[iop_path_reporter_fkie: PathReporter](#iop_path_reporter_fkie-pathreporter)  
 
 
 ## _iop_costmap2d_fkie:_ CostMap2D
