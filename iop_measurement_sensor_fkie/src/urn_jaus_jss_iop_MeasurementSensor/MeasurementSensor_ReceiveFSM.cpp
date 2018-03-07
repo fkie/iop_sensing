@@ -93,27 +93,27 @@ void MeasurementSensor_ReceiveFSM::measurementReceived(const iop_msgs_fkie::Meas
 	if (!isnan(measurement->altitude)) {
 		msg.getBody()->getMeasurementSeq()->getGlobalPoseRec()->setAltitude(measurement->altitude);
 	}
+	ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq new_valseq;
+	msg.getBody()->getMeasurementSeq()->getReadingsList()->addElement(new_valseq);
+	unsigned int new_count = msg.getBody()->getMeasurementSeq()->getReadingsList()->getNumberOfElements();
+	ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq* valseq = msg.getBody()->getMeasurementSeq()->getReadingsList()->getElement(new_count - 1);
 	for (unsigned int i = 0; i < measurement->values.size() && i < 255; i++) {
 		iop_msgs_fkie::MeasurementValue mval = measurement->values[i];
-		ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq valseq;
-		valseq.getReadingRec()->setSensor(mval.sensor);
-		valseq.getReadingRec()->setSource(mval.source);
-		valseq.getReadingRec()->setType(mval.type);
-		valseq.getReadingRec()->setUnit(mval.unit);
-		valseq.getReadingRec()->setMinimum(mval.min);
-		valseq.getReadingRec()->setMaximum(mval.max);
-		valseq.getReadingRec()->setAvarage(mval.avg);
-		valseq.getReadingRec()->setAlertLevel(mval.alert_level);
-		valseq.getReadingRec()->setAlertExplanation(mval.alert_explanation);
-		valseq.getReadingRec()->setExtendedInfo(mval.extended_info);
-		ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq::ValueList vallist;
+		valseq->getReadingRec()->setSensor(mval.sensor);
+		valseq->getReadingRec()->setSource(mval.source);
+		valseq->getReadingRec()->setType(mval.type);
+		valseq->getReadingRec()->setUnit(mval.unit);
+		valseq->getReadingRec()->setMinimum(mval.min);
+		valseq->getReadingRec()->setMaximum(mval.max);
+		valseq->getReadingRec()->setAvarage(mval.avg);
+		valseq->getReadingRec()->setAlertLevel(mval.alert_level);
+		valseq->getReadingRec()->setAlertExplanation(mval.alert_explanation);
+		valseq->getReadingRec()->setExtendedInfo(mval.extended_info);
 		for (unsigned int v = 0; v < mval.value.size() && v < 255; i++) {
 			ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq::ValueList::ValueRec valrec;
 			valrec.setValue(mval.value[v]);
-			vallist.addElement(valrec);
+			valseq->getValueList()->addElement(valrec);
 		}
-		valseq.setValueList(vallist);
-		msg.getBody()->getMeasurementSeq()->getReadingsList()->addElement(valseq);
 	}
 	p_report_measurement = msg;
 	pEvents_ReceiveFSM->get_event_handler().set_report(QueryMeasurement::ID, &p_report_measurement);
