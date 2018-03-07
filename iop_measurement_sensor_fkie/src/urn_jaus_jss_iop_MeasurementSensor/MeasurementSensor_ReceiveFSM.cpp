@@ -93,7 +93,7 @@ void MeasurementSensor_ReceiveFSM::measurementReceived(const iop_msgs_fkie::Meas
 	if (!isnan(measurement->altitude)) {
 		msg.getBody()->getMeasurementSeq()->getGlobalPoseRec()->setAltitude(measurement->altitude);
 	}
-	for (unsigned int i = 0; i < measurement->values.size(); i++) {
+	for (unsigned int i = 0; i < measurement->values.size() && i < 255; i++) {
 		iop_msgs_fkie::MeasurementValue mval = measurement->values[i];
 		ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq valseq;
 		valseq.getReadingRec()->setSensor(mval.sensor);
@@ -106,11 +106,13 @@ void MeasurementSensor_ReceiveFSM::measurementReceived(const iop_msgs_fkie::Meas
 		valseq.getReadingRec()->setAlertLevel(mval.alert_level);
 		valseq.getReadingRec()->setAlertExplanation(mval.alert_explanation);
 		valseq.getReadingRec()->setExtendedInfo(mval.extended_info);
-		for (unsigned int v = 0; v < mval.value.size(); i++) {
+		ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq::ValueList vallist;
+		for (unsigned int v = 0; v < mval.value.size() && v < 255; i++) {
 			ReportMeasurement::Body::MeasurementSeq::ReadingsList::ReadingSeq::ValueList::ValueRec valrec;
 			valrec.setValue(mval.value[v]);
-			valseq.getValueList()->addElement(valrec);
+			vallist.addElement(valrec);
 		}
+		valseq.setValueList(vallist);
 		msg.getBody()->getMeasurementSeq()->getReadingsList()->addElement(valseq);
 	}
 	p_report_measurement = msg;
