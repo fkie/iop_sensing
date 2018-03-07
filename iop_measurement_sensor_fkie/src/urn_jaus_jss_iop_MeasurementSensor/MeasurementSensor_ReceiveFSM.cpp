@@ -78,7 +78,6 @@ void MeasurementSensor_ReceiveFSM::sendReportMeasurementAction(Receive::Body::Re
 
 void MeasurementSensor_ReceiveFSM::measurementReceived(const iop_msgs_fkie::Measurement::ConstPtr& measurement)
 {
-	std::cout << "received measurement" << std::endl;
 	ReportMeasurement msg;
 	msg.getBody()->getMeasurementSeq()->getDeviceRec()->setDeviceName(measurement->device_name);
 	if (!measurement->device_designation.empty()) {
