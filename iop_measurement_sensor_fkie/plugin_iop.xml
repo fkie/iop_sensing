@@ -1,4 +1,4 @@
-<library path="libiop_global_pose_sensor_fkie">
+<library path="libiop_measurement_sensor_fkie">
   <class name="MeasurementSensor" type="iop::MeasurementSensorPlugin" base_class_type="iop::PluginInterface">
     <description>
       MeasurementSensor Service Plugin
