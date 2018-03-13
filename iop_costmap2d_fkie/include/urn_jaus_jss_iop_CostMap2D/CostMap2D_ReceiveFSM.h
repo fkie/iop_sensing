@@ -44,8 +44,7 @@ along with this program; or you can read the full license at
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <tf/transform_datatypes.h>
-#include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace urn_jaus_jss_iop_CostMap2D
 {
@@ -83,7 +82,8 @@ protected:
 	urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM;
 	urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM;
 
-	tf::TransformListener* tfListener;
+	tf2_ros::Buffer p_tf_buffer;
+	tf2_ros::TransformListener* tfListener;
 	std::string p_tf_frame_odom;
 	std::string p_tf_frame_robot;
 	double offset_yaw;
