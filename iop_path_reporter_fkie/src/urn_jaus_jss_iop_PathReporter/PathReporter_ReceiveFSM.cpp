@@ -26,16 +26,30 @@ PathReporter_ReceiveFSM::PathReporter_ReceiveFSM(urn_jaus_jss_core_Transport::Tr
 	this->pTransport_ReceiveFSM = pTransport_ReceiveFSM;
 	this->pEvents_ReceiveFSM = pEvents_ReceiveFSM;
 	p_tf_frame_world = "/world";
+	p_tf_frame_odom = "odom";
 	p_tf_frame_robot = "base_link";
 	p_utm_zone = "32U";
 	p_maximum_points = 15;
 	p_use_tf_for_historical = false;
 	p_min_dist = 0.25;
+	p_report_local_historical_path.getBody()->getPathVar()->setFieldValue(1);
+	p_report_global_path.getBody()->getPathVar()->setFieldValue(2);
+	p_report_local_path.getBody()->getPathVar()->setFieldValue(3);
+	ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_hist_local_plan;
+	cap_hist_local_plan.setMaxTargetResolution(0);
+	cap_hist_local_plan.setMinTargetResolution(0);
+	cap_hist_local_plan.setPathType(1);
+	p_report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_hist_local_plan);
 	ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_global_plan;
 	cap_global_plan.setMaxTargetResolution(0);
 	cap_global_plan.setMinTargetResolution(0);
 	cap_global_plan.setPathType(2);
 	p_report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_global_plan);
+	ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_local_plan;
+	cap_local_plan.setMaxTargetResolution(0);
+	cap_local_plan.setMinTargetResolution(0);
+	cap_local_plan.setPathType(3);
+	p_report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_local_plan);
 }
 
 
@@ -55,40 +69,50 @@ void PathReporter_ReceiveFSM::setupNotifications()
 	pEvents_ReceiveFSM->get_event_handler().register_query(QueryPath::ID);
 	iop::Config cfg("~PathReporter");
 	cfg.param("tf_frame_world", p_tf_frame_world, p_tf_frame_world);
-	// TODO:
-//	cfg.param("use_tf_for_historical_path", p_use_tf_for_historical, p_use_tf_for_historical);
+	cfg.param("tf_frame_odom", p_tf_frame_odom, p_tf_frame_odom);
+//	cfg.param("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
 	cfg.param("utm_zone", p_utm_zone, p_utm_zone);
 	cfg.param("min_dist", p_min_dist, p_min_dist);
 	cfg.param("maximum_points", p_maximum_points, p_maximum_points);
-	p_sub_path = cfg.subscribe<nav_msgs::Path>("planned_global_path", 1, &PathReporter_ReceiveFSM::pRosPath, this);
+	p_sub_local_path = cfg.subscribe<nav_msgs::Path>("planned_local_path", 1, &PathReporter_ReceiveFSM::p_ros_local_path, this);
+	p_sub_global_path = cfg.subscribe<nav_msgs::Path>("planned_global_path", 1, &PathReporter_ReceiveFSM::p_ros_global_path, this);
 	if (!p_use_tf_for_historical) {
-		p_sub_pose = cfg.subscribe<geometry_msgs::PoseStamped>("historical_pose", 1, &PathReporter_ReceiveFSM::pRosPose, this);
-		p_sub_odom = cfg.subscribe<nav_msgs::Odometry>("historical_odom", 1, &PathReporter_ReceiveFSM::pRosOdom, this);
+		p_sub_pose = cfg.subscribe<geometry_msgs::PoseStamped>("historical_pose", 1, &PathReporter_ReceiveFSM::p_ros_pose, this);
+		p_sub_odom = cfg.subscribe<nav_msgs::Odometry>("historical_odom", 1, &PathReporter_ReceiveFSM::p_ros_odom, this);
 	} else {
-		cfg.param("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
+		// cfg.param("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
 		ros::NodeHandle nh;
 		double tf_hz = 10.0;
 		cfg.param("tf_hz", tf_hz, tf_hz);
 		if (tf_hz == 0.0) {
 			tf_hz = 10.0;
 		}
-		p_tf_timer = nh.createTimer(ros::Duration(1.0 / tf_hz), &PathReporter_ReceiveFSM::tfCallback, this);
+		p_tf_timer = nh.createTimer(ros::Duration(1.0 / tf_hz), &PathReporter_ReceiveFSM::p_tf_callback, this);
 	}
 }
 
 void PathReporter_ReceiveFSM::sendReportPathAction(QueryPath msg, Receive::Body::ReceiveRec transportData)
 {
 	JausAddress sender = transportData.getAddress();
-	ROS_DEBUG_NAMED("PathReporter", "send path with %d global planned points to %s", p_report_path.getBody()->getPathVar()->getPlannedGlobalPath()->getNumberOfElements(), sender.str().c_str());
 	ReportPath reply;
-	// todo: apply other filter
-	if (msg.getBody()->getQueryPathRec()->getPathType() == 0) {
-		reply.getBody()->getPathVar()->setFieldValue(0);
-		reply.getBody()->getPathVar()->setHistoricalGlobalPath(*p_report_global_historical_path.getBody()->getPathVar()->getHistoricalGlobalPath());
+	ROS_DEBUG_NAMED("PathReporter", "received query for %d from %s", msg.getBody()->getQueryPathRec()->getPathType(), sender.str().c_str());
+//	if (msg.getBody()->getQueryPathRec()->getPathType() == 0) {
+//		reply.getBody()->getPathVar()->setFieldValue(0);
+//		reply.getBody()->getPathVar()->setHistoricalGlobalPath(*p_report_global_historical_path.getBody()->getPathVar()->getHistoricalGlobalPath());
+//	}
+	if (msg.getBody()->getQueryPathRec()->getPathType() == 1) {
+		reply.getBody()->getPathVar()->setFieldValue(1);
+		reply.getBody()->getPathVar()->setHistoricalLocalPath(*p_report_local_historical_path.getBody()->getPathVar()->getHistoricalLocalPath());
 	}
 	if (msg.getBody()->getQueryPathRec()->getPathType() == 2) {
+		ROS_DEBUG_NAMED("PathReporter", "send path with %d global planned points to %s", p_report_global_path.getBody()->getPathVar()->getPlannedGlobalPath()->getNumberOfElements(), sender.str().c_str());
 		reply.getBody()->getPathVar()->setFieldValue(2);
-		reply.getBody()->getPathVar()->setPlannedGlobalPath(*p_report_path.getBody()->getPathVar()->getPlannedGlobalPath());
+		reply.getBody()->getPathVar()->setPlannedGlobalPath(*p_report_global_path.getBody()->getPathVar()->getPlannedGlobalPath());
+	}
+	if (msg.getBody()->getQueryPathRec()->getPathType() == 3) {
+		ROS_DEBUG_NAMED("PathReporter", "send path with %d local planned points to %s", p_report_local_path.getBody()->getPathVar()->getPlannedLocalPath()->getNumberOfElements(), sender.str().c_str());
+		reply.getBody()->getPathVar()->setFieldValue(3);
+		reply.getBody()->getPathVar()->setPlannedLocalPath(*p_report_local_path.getBody()->getPathVar()->getPlannedLocalPath());
 	}
 	sendJausMessage(reply, sender);
 }
@@ -103,33 +127,66 @@ void PathReporter_ReceiveFSM::sendReportPathReporterCapabilitiesAction(QueryPath
 bool PathReporter_ReceiveFSM::isSupported(QueryPath msg)
 {
 	// supports only global path
-	return (msg.getBody()->getQueryPathRec()->getPathType() == 0
-			|| msg.getBody()->getQueryPathRec()->getPathType() == 2);
+	return ((msg.getBody()->getQueryPathRec()->getPathType() == 1 && (p_sub_pose.getNumPublishers() > 0 || p_sub_odom.getNumPublishers() > 0))
+			|| (msg.getBody()->getQueryPathRec()->getPathType() == 2 && p_sub_global_path.getNumPublishers() > 0)
+			|| (msg.getBody()->getQueryPathRec()->getPathType() == 3 && p_sub_local_path.getNumPublishers() > 0));
 }
 
-void PathReporter_ReceiveFSM::pRosPath(const nav_msgs::Path::ConstPtr& msg)
+void PathReporter_ReceiveFSM::p_ros_local_path(const nav_msgs::Path::ConstPtr& msg)
 {
-	ROS_DEBUG_NAMED("PathReporter", "update path with new count: %d", (int)msg->poses.size());
+	ROS_DEBUG_NAMED("PathReporter", "update local path with new count: %d", (int)msg->poses.size());
 	ReportPath::Body::PathVar gpath;
 	gpath.setFieldValue(2);
 	bool transformed = false;
 	for (unsigned int i = 0; i < msg->poses.size(); i++) {
-		try {
-			ReportPath::Body::PathVar::PlannedGlobalPath::GlobalPoseRec grec;
-			geometry_msgs::PoseStamped pose_in = msg->poses[i];
-			if (pose_in.header.frame_id.empty()) {
-				pose_in.header = msg->header;
+		ReportPath::Body::PathVar::PlannedLocalPath::LocalPoseRec lrec;
+		geometry_msgs::PoseStamped pose = msg->poses[i];
+		if (pose.header.frame_id.empty()) {
+			pose.header = msg->header;
+		}
+		if (p_transform_pose(pose, p_tf_frame_odom)) {
+			lrec.setX(pose.pose.position.x);
+			lrec.setY(pose.pose.position.y);
+			lrec.setZ(pose.pose.position.z);
+			double roll, pitch, yaw;
+			tf::Quaternion quat(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
+			tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+			if (!isnan(yaw)) {
+				lrec.setRoll(roll);
+				lrec.setPitch(pitch);
+				lrec.setYaw(yaw);
 			}
-			tfListener.waitForTransform(p_tf_frame_world, pose_in.header.frame_id, pose_in.header.stamp, ros::Duration(0.3));
-			geometry_msgs::PoseStamped pose_out;
-			tfListener.transformPose(p_tf_frame_world, pose_in, pose_out);
+			transformed = true;
+			gpath.getPlannedLocalPath()->addElement(lrec);
+		}
+	}
+	if (transformed || msg->poses.size() == 0) {
+		p_report_local_path.getBody()->setPathVar(gpath);
+		ROS_DEBUG_NAMED("PathReporter", "  local planned path updated, new count: %d", p_report_local_path.getBody()->getPathVar()->getPlannedLocalPath()->getNumberOfElements());
+		p_apply_path2event(p_report_local_path, 3);
+	}
+}
+
+void PathReporter_ReceiveFSM::p_ros_global_path(const nav_msgs::Path::ConstPtr& msg)
+{
+	ROS_DEBUG_NAMED("PathReporter", "update global path with new count: %d", (int)msg->poses.size());
+	ReportPath::Body::PathVar gpath;
+	gpath.setFieldValue(2);
+	bool transformed = false;
+	for (unsigned int i = 0; i < msg->poses.size(); i++) {
+		ReportPath::Body::PathVar::PlannedGlobalPath::GlobalPoseRec grec;
+		geometry_msgs::PoseStamped pose = msg->poses[i];
+		if (pose.header.frame_id.empty()) {
+			pose.header = msg->header;
+		}
+		if (p_transform_pose(pose, p_tf_frame_world)) {
 			double lat, lon = 0;
-			gps_common::UTMtoLL(pose_out.pose.position.y, pose_out.pose.position.x, p_utm_zone.c_str(), lat, lon);
+			gps_common::UTMtoLL(pose.pose.position.y, pose.pose.position.x, p_utm_zone.c_str(), lat, lon);
 			grec.setLatitude(lat);
 			grec.setLongitude(lon);
-			grec.setAltitude(pose_out.pose.position.z);
+			grec.setAltitude(pose.pose.position.z);
 			double roll, pitch, yaw;
-			tf::Quaternion quat(pose_out.pose.orientation.x, pose_out.pose.orientation.y, pose_out.pose.orientation.z, pose_out.pose.orientation.w);
+			tf::Quaternion quat(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
 			tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
 			if (!isnan(yaw)) {
 				grec.setRoll(roll);
@@ -138,95 +195,74 @@ void PathReporter_ReceiveFSM::pRosPath(const nav_msgs::Path::ConstPtr& msg)
 			}
 			transformed = true;
 			gpath.getPlannedGlobalPath()->addElement(grec);
-		} catch (tf::TransformException &ex) {
-			printf ("Failure %s\n", ex.what()); //Print exception which was caught
 		}
 	}
 	if (transformed || msg->poses.size() == 0) {
-		p_report_path.getBody()->setPathVar(gpath);
-		ROS_INFO_NAMED("PathReporter", "  global planned path updated, new count: %d", p_report_path.getBody()->getPathVar()->getPlannedGlobalPath()->getNumberOfElements());
-		pApplyPath2Event(p_report_path, 2);
+		p_report_global_path.getBody()->setPathVar(gpath);
+		ROS_DEBUG_NAMED("PathReporter", "  global planned path updated, new count: %d", p_report_global_path.getBody()->getPathVar()->getPlannedGlobalPath()->getNumberOfElements());
+		p_apply_path2event(p_report_global_path, 2);
 	}
 }
 
-void PathReporter_ReceiveFSM::pRosPose(const geometry_msgs::PoseStamped::ConstPtr& msg)
+void PathReporter_ReceiveFSM::p_ros_pose(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
-	try {
-		ReportPath::Body::PathVar::HistoricalGlobalPath* hgpath = p_report_global_historical_path.getBody()->getPathVar()->getHistoricalGlobalPath();
-		ReportPath::Body::PathVar::HistoricalGlobalPath::GlobalPoseRec grec;
-		geometry_msgs::PoseStamped pose_in = *msg;
-		if (pose_in.header.frame_id.empty()) {
-			pose_in.header = msg->header;
+	ReportPath::Body::PathVar::HistoricalLocalPath* hgpath = p_report_local_historical_path.getBody()->getPathVar()->getHistoricalLocalPath();
+	ReportPath::Body::PathVar::HistoricalLocalPath::LocalPoseRec lrec;
+	geometry_msgs::PoseStamped pose = *msg;
+	bool transformed = p_transform_pose(pose, p_tf_frame_odom);
+	if (transformed && p_different_pose(p_last_hist_local_pose, pose)) {
+		lrec.setX(pose.pose.position.x);
+		lrec.setY(pose.pose.position.y);
+		lrec.setZ(pose.pose.position.z);
+		double roll, pitch, yaw;
+		tf::Quaternion quat(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
+		tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+		if (!isnan(yaw)) {
+			lrec.setRoll(roll);
+			lrec.setPitch(pitch);
+			lrec.setYaw(yaw);
 		}
-		tfListener.waitForTransform(p_tf_frame_world, pose_in.header.frame_id, pose_in.header.stamp, ros::Duration(0.3));
-		geometry_msgs::PoseStamped pose_out;
-		tfListener.transformPose(p_tf_frame_world, pose_in, pose_out);
-		if (pDifferentPose(p_last_hist_global_pose, pose_out)) {
-			double lat, lon = 0;
-			gps_common::UTMtoLL(pose_out.pose.position.y, pose_out.pose.position.x, p_utm_zone.c_str(), lat, lon);
-			grec.setLatitude(lat);
-			grec.setLongitude(lon);
-			grec.setAltitude(pose_out.pose.position.z);
-			double roll, pitch, yaw;
-			tf::Quaternion quat(pose_out.pose.orientation.x, pose_out.pose.orientation.y, pose_out.pose.orientation.z, pose_out.pose.orientation.w);
-			tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
-			if (!isnan(yaw)) {
-				grec.setRoll(roll);
-				grec.setPitch(pitch);
-				grec.setYaw(yaw);
-			}
-			hgpath->addElement(grec);
-			if (hgpath->getNumberOfElements() > p_maximum_points) {
-				hgpath->deleteElement(0);
-			}
-			ROS_DEBUG_NAMED("PathReporter", "  global historical path updated, new count: %d", hgpath->getNumberOfElements());
-			pApplyPath2Event(p_report_global_historical_path, 0);
-			p_last_hist_global_pose = pose_out;
+		hgpath->addElement(lrec);
+		if (hgpath->getNumberOfElements() > p_maximum_points) {
+			hgpath->deleteElement(0);
 		}
-	} catch (tf::TransformException &ex) {
-		printf ("Failure %s\n", ex.what()); //Print exception which was caught
+		ROS_DEBUG_NAMED("PathReporter", "  local historical path updated, new count: %d", hgpath->getNumberOfElements());
+		p_apply_path2event(p_report_local_historical_path, 1);
+		p_last_hist_local_pose = pose;
 	}
 }
 
-void PathReporter_ReceiveFSM::pRosOdom(const nav_msgs::Odometry::ConstPtr& msg)
+void PathReporter_ReceiveFSM::p_ros_odom(const nav_msgs::Odometry::ConstPtr& msg)
 {
-	try {
-		ReportPath::Body::PathVar::HistoricalGlobalPath* hgpath = p_report_global_historical_path.getBody()->getPathVar()->getHistoricalGlobalPath();
-		ReportPath::Body::PathVar::HistoricalGlobalPath::GlobalPoseRec grec;
-		geometry_msgs::PoseStamped pose_in;
-		pose_in.header = msg->header;
-		pose_in.pose = msg->pose.pose;
-		tfListener.waitForTransform(p_tf_frame_world, msg->header.frame_id, msg->header.stamp, ros::Duration(0.3));
-		geometry_msgs::PoseStamped pose_out;
-		tfListener.transformPose(p_tf_frame_world, pose_in, pose_out);
-		if (pDifferentPose(p_last_hist_global_pose, pose_out)) {
-			double lat, lon = 0;
-			gps_common::UTMtoLL(pose_out.pose.position.y, pose_out.pose.position.x, p_utm_zone.c_str(), lat, lon);
-			grec.setLatitude(lat);
-			grec.setLongitude(lon);
-			grec.setAltitude(pose_out.pose.position.z);
-			double roll, pitch, yaw;
-			tf::Quaternion quat(pose_out.pose.orientation.x, pose_out.pose.orientation.y, pose_out.pose.orientation.z, pose_out.pose.orientation.w);
-			tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
-			if (!isnan(yaw)) {
-				grec.setRoll(roll);
-				grec.setPitch(pitch);
-				grec.setYaw(yaw);
-			}
-			hgpath->addElement(grec);
-			if (hgpath->getNumberOfElements() > p_maximum_points) {
-				hgpath->deleteElement(0);
-			}
-			ROS_DEBUG_NAMED("PathReporter", "  global historical path updated, new count: %d", hgpath->getNumberOfElements());
-			pApplyPath2Event(p_report_global_historical_path, 0);
-			p_last_hist_global_pose = pose_out;
+	ReportPath::Body::PathVar::HistoricalLocalPath* hgpath = p_report_local_historical_path.getBody()->getPathVar()->getHistoricalLocalPath();
+	ReportPath::Body::PathVar::HistoricalLocalPath::LocalPoseRec lrec;
+	geometry_msgs::PoseStamped pose;
+	pose.header = msg->header;
+	pose.pose = msg->pose.pose;
+	bool transformed = p_transform_pose(pose, p_tf_frame_odom);
+	if (transformed && p_different_pose(p_last_hist_local_pose, pose)) {
+		lrec.setX(pose.pose.position.x);
+		lrec.setY(pose.pose.position.y);
+		lrec.setZ(pose.pose.position.z);
+		double roll, pitch, yaw;
+		tf::Quaternion quat(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
+		tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+		if (!isnan(yaw)) {
+			lrec.setRoll(roll);
+			lrec.setPitch(pitch);
+			lrec.setYaw(yaw);
 		}
-	} catch (tf::TransformException &ex) {
-		printf ("Failure %s\n", ex.what()); //Print exception which was caught
+		hgpath->addElement(lrec);
+		if (hgpath->getNumberOfElements() > p_maximum_points) {
+			hgpath->deleteElement(0);
+		}
+		ROS_DEBUG_NAMED("PathReporter", "  local historical path updated, new count: %d", hgpath->getNumberOfElements());
+		p_apply_path2event(p_report_local_historical_path, 1);
+		p_last_hist_local_pose = pose;
 	}
 }
 
-void PathReporter_ReceiveFSM::tfCallback(const ros::TimerEvent& e)
+void PathReporter_ReceiveFSM::p_tf_callback(const ros::TimerEvent& e)
 {
 //	try {
 //		tfListener.waitForTransform(p_tf_frame_world, p_tf_frame_robot, ros::Time(0), ros::Duration(0.3));
@@ -265,7 +301,7 @@ void PathReporter_ReceiveFSM::tfCallback(const ros::TimerEvent& e)
 
 }
 
-void PathReporter_ReceiveFSM::pApplyPath2Event(ReportPath& report_path, unsigned short path_type)
+void PathReporter_ReceiveFSM::p_apply_path2event(ReportPath& report_path, unsigned short path_type)
 {
 	std::map<jUnsignedByte, urn_jaus_jss_core_Events::CreateEvent::Body::CreateEventRec::QueryMessage> queries;
 	pEvents_ReceiveFSM->get_event_handler().get_queries(QueryPath::ID, queries);
@@ -276,11 +312,14 @@ void PathReporter_ReceiveFSM::pApplyPath2Event(ReportPath& report_path, unsigned
 		if (qr.getBody()->getQueryPathRec()->getPathType() == path_type) {
 			// todo: apply other filter
 			pEvents_ReceiveFSM->get_event_handler().send_report(it->first, report_path, path_type);
+			ROS_DEBUG_NAMED("PathReporter", "  p_apply_path2event, %d added to events", path_type);
+		} else {
+			ROS_DEBUG_NAMED("PathReporter", "  p_apply_path2event, %d not in query, only %d", path_type, qr.getBody()->getQueryPathRec()->getPathType());
 		}
 	}
 }
 
-bool PathReporter_ReceiveFSM::pDifferentPose(geometry_msgs::PoseStamped &first, geometry_msgs::PoseStamped &second)
+bool PathReporter_ReceiveFSM::p_different_pose(geometry_msgs::PoseStamped &first, geometry_msgs::PoseStamped &second)
 {
 	double dist = std::sqrt(std::pow(first.pose.position.x - second.pose.position.x, 2) +
 			std::pow(first.pose.position.y - second.pose.position.y, 2) +
@@ -304,6 +343,21 @@ bool PathReporter_ReceiveFSM::pDifferentPose(geometry_msgs::PoseStamped &first, 
 		}
 	} catch (std::exception &e) {
 		return false;
+	}
+	return false;
+}
+
+bool PathReporter_ReceiveFSM::p_transform_pose(geometry_msgs::PoseStamped& pose, std::string target_frame)
+{
+	try {
+		if (pose.header.frame_id.compare(target_frame) != 0) {
+			tfListener.waitForTransform(target_frame, pose.header.frame_id, pose.header.stamp, ros::Duration(0.3));
+			geometry_msgs::PoseStamped pose_out;
+			tfListener.transformPose(target_frame, pose, pose);
+		}
+		return true;
+	} catch (tf::TransformException &ex) {
+		printf ("Failure %s\n", ex.what()); //Print exception which was caught
 	}
 	return false;
 }

@@ -61,7 +61,7 @@ _measurement (iop_msgs_fkie::Measurement)_
 
 ## _iop_path_reporter_fkie:_ PathReporter
 
-Reports historical and planned paths.
+Reports local historical and {local, global} planned paths.
 
 #### Parameter:
 
@@ -69,9 +69,9 @@ _tf_frame_world (str_, Default: "/world")
 
 > TF frame id used in ROS for global coordinates.
 
-_tf_frame_robot (str_, Default: "base_link")
+_tf_frame_odom (str_, Default: "odom")
 
-> Defines the robot frame id.
+> Frame id of local coordinates published to IOP.
 
 _utm_zone (str_, Default: "32U")
 
@@ -79,7 +79,7 @@ _utm_zone (str_, Default: "32U")
 
 _maximum_points (int_, Default: 15)
 
-> The maximum points in the lists.
+> The maximum points in the local history list
 
 _min_dist (double_, Default: 0.25)
 
@@ -87,7 +87,7 @@ _min_dist (double_, Default: 0.25)
 
 _use_tf_for_historical (bool_, Default: false)
 
-> Use tf for historical path instead of position or odometry. **Feature currently in developement!**
+> Use tf for historical path instead of position or odometry. **Feature currently in developement and not available!**
 
 #### Publisher:
 
@@ -98,10 +98,13 @@ _use_tf_for_historical (bool_, Default: false)
 _historical_pose (geometry_msgs::PoseStamped)_
 _historical_odom (nav_msgs::Odometry)_
 
-> Position or Odometry to create the historical path. Only active if _use_tf_for_historical_ is *false*.
+> Position or Odometry to create the local historical path.
 
 _planned_global_path (nav_msgs::Path)_
 
 > A list of points for planned path.
 
+_planned_local_path (nav_msgs::Path)_
+
+> A list of points for local path.
 
