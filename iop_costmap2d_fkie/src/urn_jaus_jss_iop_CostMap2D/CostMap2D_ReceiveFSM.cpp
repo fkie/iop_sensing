@@ -24,6 +24,7 @@ along with this program; or you can read the full license at
 #include "urn_jaus_jss_iop_CostMap2D/CostMap2D_ReceiveFSM.h"
 #include <iop_component_fkie/iop_config.h>
 
+#include <tf2/convert.h>
 #include <tf2/transform_datatypes.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
@@ -170,9 +171,21 @@ bool CostMap2D_ReceiveFSM::zoneExists(RemoveNoGoZone msg)
 
 void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr& map_in) {
 	try {
+		ROS_DEBUG_NAMED("CostMap2D", "Map received, transform...");
 		//get current robot to map transform:
 		geometry_msgs::TransformStamped tf_pose;
 		tf_pose = p_tf_buffer.lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, ros::Duration(1.5));
+		ROS_DEBUG_NAMED("CostMap2D", "  map origin: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
+		ROS_DEBUG_NAMED("CostMap2D", "  robot position from tf: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
+		// apply map origin to robot position
+		tf2::Quaternion q(map_in->info.origin.orientation.x, map_in->info.origin.orientation.y, map_in->info.origin.orientation.z, map_in->info.origin.orientation.w);
+		tf2::Vector3 r(map_in->info.origin.position.x, map_in->info.origin.position.y, map_in->info.origin.position.z);
+		tf2::Transform transform(q, r);
+		tf2::Quaternion qr(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
+		tf2::Vector3 rr(tf_pose.transform.translation.x, tf_pose.transform.translation.y, tf_pose.transform.translation.z);
+		tf2::Transform transform_rob(qr, rr);
+		tf2::Transform tr_result = transform.inverse() * transform_rob;
+		ROS_DEBUG_NAMED("CostMap2D", "  transformed robot position %.2f, %.2f", tr_result.getOrigin().getX(), tr_result.getOrigin().getY());
 		ReportCostMap2D map;
 		ReportCostMap2D::Body::CostMap2DSeq::CostMap2DRec *map_size = map.getBody()->getCostMap2DSeq()->getCostMap2DRec();
 		ReportCostMap2D::Body::CostMap2DSeq::CostMap2DPoseVar *map_pose = map.getBody()->getCostMap2DSeq()->getCostMap2DPoseVar();
@@ -180,37 +193,64 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		map_pose->setFieldValue(1);
 		ReportCostMap2D::Body::CostMap2DSeq::CostMap2DDataVar *map_data = map.getBody()->getCostMap2DSeq()->getCostMap2DDataVar();
 		// set map size
-		int idx_width_start = 0;
-		int idx_width_end = map_in->info.width;
+		int x_res = tr_result.getOrigin().getX() / map_in->info.resolution;
 		int map_width = map_in->info.width;
-		if (p_map_max_edge_size < map_in->info.width) {
-			ROS_DEBUG_NAMED("CostMap2D", "Reduce map width to %d", p_map_max_edge_size);
-			ROS_DEBUG_NAMED("CostMap2D", "  origin map size: w%d, h%d, res: %.2f, in meter: w%.2f, h%.2f", map_in->info.width, map_in->info.height, map_in->info.resolution, map_in->info.width * map_in->info.resolution, map_in->info.height * map_in->info.resolution);
-			ROS_DEBUG_NAMED("CostMap2D", "  origin: %.2f, %.2f", tf_pose.transform.translation.x, tf_pose.transform.translation.y);
-			idx_width_start = tf_pose.transform.translation.x / map_in->info.resolution - p_map_max_edge_size / 2.0 + map_in->info.width / 2.0;
-			idx_width_end = idx_width_start + p_map_max_edge_size;
-			ROS_DEBUG_NAMED("CostMap2D", "  map width: start: %d, end: %d", idx_width_start, idx_width_end);
+		if (map_in->info.width > p_map_max_edge_size) {
 			map_width = p_map_max_edge_size;
 		}
-		int idx_height_end = 0;
-		int idx_height_start = map_in->info.height;
+		int idx_width_start = x_res - map_width / 2;
+		int idx_width_end = x_res + map_width / 2;
+		int x_offset_res = 0;
+		// check boundaries for width
+		if (idx_width_start < 0) {
+			// robot on the left border, add offset to the center of the map
+			x_offset_res = -idx_width_start;
+			idx_width_end -= idx_width_start;
+			idx_width_start = 0;
+		}
+		if (idx_width_end > map_in->info.width) {
+			// robot on the right border, add offset to the center of the map
+			x_offset_res = map_in->info.width - idx_width_end;
+			idx_width_start += x_offset_res;
+			idx_width_end = map_in->info.width;
+		}
+
+		int y_res = tr_result.getOrigin().getY() / map_in->info.resolution;
 		int map_height = map_in->info.height;
-		if (p_map_max_edge_size < map_in->info.height) {
-			ROS_DEBUG_NAMED("CostMap2D", "Reduce map height to %d", p_map_max_edge_size);
-			idx_height_end = tf_pose.transform.translation.y / map_in->info.resolution - p_map_max_edge_size / 2.0 + map_in->info.height / 2.0;
-			idx_height_start = idx_height_end + p_map_max_edge_size;
-			ROS_DEBUG_NAMED("CostMap2D", "  map height: start: %d, end: %d", idx_height_start, idx_height_end);
+		if (map_in->info.height > p_map_max_edge_size) {
 			map_height = p_map_max_edge_size;
 		}
+		int idx_height_start = y_res + map_height / 2;
+		int idx_height_end = y_res - map_height / 2;
+		int y_offset_res = 0;
+		// check boundaries for height
+		if (idx_height_end < 0) {
+			// robot on the bottom border, add offset to the center of the map
+			y_offset_res = -idx_height_end;
+			idx_height_start -= idx_height_end;
+			idx_height_end = 0;
+		}
+		if (idx_height_start > map_in->info.height) {
+			// robot on the top border, add offset to the center of the map
+			y_offset_res = map_in->info.height - idx_height_start;
+			idx_height_end += y_offset_res;
+			idx_height_start = map_in->info.height;
+		}
+
+		ROS_DEBUG_NAMED("CostMap2D", "  map size original [px]: %d x %d, used %d x %d", map_in->info.width, map_in->info.height, map_width, map_height);
+		ROS_DEBUG_NAMED("CostMap2D", "  robot position [px]:  %d, %d, offset %d, %d", x_res, y_res, x_offset_res, y_offset_res);
+		ROS_DEBUG_NAMED("CostMap2D", "  estimated robot offset if robot on boundary: %.2f, %.2f", x_offset_res * map_in->info.resolution, y_offset_res * map_in->info.resolution);
+		ROS_DEBUG_NAMED("CostMap2D", "  used index width [px]: %d - %d, height: %d - %d", idx_width_start, idx_width_end, idx_height_start, idx_height_end);
+
 		// set map dimensions in the IOP message
-		map_size->setNumberOfColumns(map_width);
-		map_size->setNumberOfRows(map_height);
-		map_size->setMapWidth(map_width * map_in->info.resolution);
-		map_size->setMapHeight(map_height * map_in->info.resolution);
+		map_size->setNumberOfColumns(idx_width_end - idx_width_start);
+		map_size->setNumberOfRows(idx_height_start - idx_height_end);
+		map_size->setMapWidth((idx_width_end - idx_width_start) * map_in->info.resolution);
+		map_size->setMapHeight((idx_height_start - idx_height_end) * map_in->info.resolution);
 		// set map data
 		// We have to flip around the y axis, y for jaus costmap starts at the top and y for map at the bottom
 		// ROS: origin : The 2-D pose of the lower-left pixel in the map, as (x, y, yaw), with yaw as counterclockwise
-		// rotation (yaw=0 means no rotation). Many parts of the system currently ignore yaw.
+		// rotation (yaw=0 means no rotation)
 		for (int y_i = idx_height_start-1; y_i >= idx_height_end; y_i--) {
 			int idx_map_y = map_in->info.width * y_i;
 			for (int x_i = idx_width_start; x_i < idx_width_end; x_i++) {
@@ -226,15 +266,22 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 			}
 		}
 		// get orientation of the map relative to odometry
+		double x_center = tf_pose.transform.translation.x + x_offset_res * map_in->info.resolution;
+		double y_center = tf_pose.transform.translation.y + y_offset_res * map_in->info.resolution;
 		tf_pose = p_tf_buffer.lookupTransform(p_tf_frame_odom, map_in->header.frame_id, map_in->header.stamp, ros::Duration(0.5));
 		tf2::Quaternion q_odom_map(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
-		double map_yaw = tf2::getYaw(q_odom_map);
+		double map_yaw = tf2::getYaw(q_odom_map); // TODO: invert because IOP uses clockwise map rotation?
+		geometry_msgs::PoseStamped pose_center;
+		pose_center.header = map_in->header;
+		pose_center.pose.position.x = x_center;
+		pose_center.pose.position.y = y_center;
+		pose_center.pose.orientation.w = 1.0;
+		pose_center = p_tf_buffer.transform(pose_center, p_tf_frame_odom, ros::Duration(0.3));
 		map_pose->getCostMap2DLocalPoseRec()->setMapRotation(map_yaw);
 		// get point of the robot position relative to odometry -> this is the local center coordinate of the map
-		tf_pose = p_tf_buffer.lookupTransform(p_tf_frame_robot, p_tf_frame_odom, map_in->header.stamp, ros::Duration(0.5));
-		ROS_DEBUG_NAMED("CostMap2D", "Map center %.2f, %.2f, yaw: %.2f", tf_pose.transform.translation.x, tf_pose.transform.translation.y, map_yaw);
-		map_pose->getCostMap2DLocalPoseRec()->setMapCenterX(tf_pose.transform.translation.x);
-		map_pose->getCostMap2DLocalPoseRec()->setMapCenterY(tf_pose.transform.translation.y);
+		ROS_DEBUG_NAMED("CostMap2D", "  estimated map center %.2f, %.2f, yaw: %.2f", pose_center.pose.position.x, pose_center.pose.position.y, map_yaw);
+		map_pose->getCostMap2DLocalPoseRec()->setMapCenterX(pose_center.pose.position.x);
+		map_pose->getCostMap2DLocalPoseRec()->setMapCenterY(pose_center.pose.position.y);
 		// TODO: add global coordinate to the map
 		// set map
 		p_costmap_msg = map;
