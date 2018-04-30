@@ -5,7 +5,9 @@ project(iop_measurement_sensor_fkie)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS 
+             iop_component_fkie
              iop_events_fkie
+             iop_msgs_fkie
              roscpp
              )
 iop_init(COMPONENT_ID 0)
@@ -14,6 +16,7 @@ iop_export_service(urn_jaus_jss_iop_MeasurementSensor)
 catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
+        iop_component_fkie
         iop_events_fkie
         iop_msgs_fkie
 )

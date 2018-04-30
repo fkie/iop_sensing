@@ -6,11 +6,13 @@ project(iop_costmap2d_fkie)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
       iop_accesscontrol_fkie
+      iop_component_fkie
       nav_msgs
       roscpp
-      tf
+      tf2
+      tf2_geometry_msgs
 )
-iop_init(COMPONENT_ID 71)
+iop_init(COMPONENT_ID 0)
 
 ###################################
 ## catkin specific configuration ##
@@ -19,7 +21,10 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
         iop_accesscontrol_fkie
+        iop_component_fkie
         nav_msgs
+        tf2
+        tf2_geometry_msgs
 )
 
 ###########
