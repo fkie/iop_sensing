@@ -1,110 +1,16 @@
-See [iop_core](https://github.com/fkie/iop_core/blob/master/README.md) for use instructions.
+This repository is part of [ROS/IOP Bridge](https://github.com/fkie/iop_core/blob/master/README.md).
 
-# Interfaces
+Build status of latest version:
 
-List of service plugins in this repository:
-
-[iop_costmap2d_fkie: CostMap2D](#iop_costmap2d_fkie-costmap2d)  
-[iop_measurement_sensor_fkie: MeasurementSensor](#iop_measurement_sensor_fkie-measurementsensor)  
-[iop_path_reporter_fkie: PathReporter](#iop_path_reporter_fkie-pathreporter)  
+[![Build Status](https://travis-ci.org/fkie/iop_sensing.svg?branch=master)](https://travis-ci.org/fkie/iop_sensing)
 
 
-## _iop_costmap2d_fkie:_ CostMap2D
+### List of service plugins in this repository:
 
-This service is used to report a ROS OccupancyGrid to IOP controller. It will only reported a part of the map around the robot. The size can be adjusted by _map_max_edge_size_. No go zones of the IOP Costmap are currently not supported.
-
-#### Parameter:
-
-_tf_frame_odom (str_, Default: "odom")
-
-> Defines the odometry frame id.
-
-_tf_frame_robot (str_, Default: "base_link")
-
-> Defines the robot frame id.
-
-_p_map_max_edge_size (int_ Default: 255)
-
-> Width and height of the map reported by this service. The actual size depends also on resolution of OccupancyGrid.
+[iop_costmap2d_fkie: CostMap2D](iop_costmap2d_fkie/README.md)  
+[iop_measurement_sensor_fkie: MeasurementSensor](iop_measurement_sensor_fkie/README.md)  
+[iop_path_reporter_fkie: PathReporter](iop_path_reporter_fkie/README.md)  
 
 
-#### Publisher:
 
-> None
-
-#### Subscriber:
-
-_map (nav_msgs::OccupancyGrid)_
-
-> Map reported by a ROS service, e.g. hector_mapping
-
-
-## _iop_measurement_sensor_fkie:_ MeasurementSensor
-
-This service is created for translation of measurement values defined in [iop_msgs_fkie](https://github.com/fkie/iop_core/tree/master/iop_msgs_fkie).
-
-#### Parameter:
-
-> None
-
-
-#### Publisher:
-
-> None
-
-#### Subscriber:
-
-_measurement (iop_msgs_fkie::Measurement)_
-
-> Measurement messages
-
-
-## _iop_path_reporter_fkie:_ PathReporter
-
-Reports local historical and {local, global} planned paths.
-
-#### Parameter:
-
-_tf_frame_world (str_, Default: "/world")
-
-> TF frame id used in ROS for global coordinates.
-
-_tf_frame_odom (str_, Default: "odom")
-
-> Frame id of local coordinates published to IOP.
-
-_utm_zone (str_, Default: "32U")
-
-> The UTM zone is used for translation of ROS global position coordinates into Lat/Lon coordinates.
-
-_maximum_points (int_, Default: 15)
-
-> The maximum points in the local history list
-
-_min_dist (double_, Default: 0.25)
-
-> This value is used for historical path. A new point is only added if a distance to previous point is more then _min_dist_.
-
-_use_tf_for_historical (bool_, Default: false)
-
-> Use tf for historical path instead of position or odometry. **Feature currently in developement and not available!**
-
-#### Publisher:
-
-> None
-
-#### Subscriber:
-
-_historical_pose (geometry_msgs::PoseStamped)_
-_historical_odom (nav_msgs::Odometry)_
-
-> Position or Odometry to create the local historical path.
-
-_planned_global_path (nav_msgs::Path)_
-
-> A list of points for planned path.
-
-_planned_local_path (nav_msgs::Path)_
-
-> A list of points for local path.
 
