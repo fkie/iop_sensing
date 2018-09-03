@@ -61,7 +61,6 @@ protected:
 	urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM;
 	urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM;
 
-	ReportPathReporterCapabilities p_report_cap;
 	ReportPath p_report_global_path;
 	ReportPath p_report_local_path;
 	ReportPath p_report_global_historical_path;

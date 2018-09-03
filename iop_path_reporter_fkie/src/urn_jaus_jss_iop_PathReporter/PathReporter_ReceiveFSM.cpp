@@ -35,21 +35,6 @@ PathReporter_ReceiveFSM::PathReporter_ReceiveFSM(urn_jaus_jss_core_Transport::Tr
 	p_report_local_historical_path.getBody()->getPathVar()->setFieldValue(1);
 	p_report_global_path.getBody()->getPathVar()->setFieldValue(2);
 	p_report_local_path.getBody()->getPathVar()->setFieldValue(3);
-	ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_hist_local_plan;
-	cap_hist_local_plan.setMaxTargetResolution(0);
-	cap_hist_local_plan.setMinTargetResolution(0);
-	cap_hist_local_plan.setPathType(1);
-	p_report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_hist_local_plan);
-	ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_global_plan;
-	cap_global_plan.setMaxTargetResolution(0);
-	cap_global_plan.setMinTargetResolution(0);
-	cap_global_plan.setPathType(2);
-	p_report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_global_plan);
-	ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_local_plan;
-	cap_local_plan.setMaxTargetResolution(0);
-	cap_local_plan.setMinTargetResolution(0);
-	cap_local_plan.setPathType(3);
-	p_report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_local_plan);
 }
 
 
@@ -121,7 +106,29 @@ void PathReporter_ReceiveFSM::sendReportPathReporterCapabilitiesAction(QueryPath
 {
 	JausAddress sender = transportData.getAddress();
 	ROS_DEBUG_NAMED("PathReporter", "send capabilities to %s", sender.str().c_str());
-	sendJausMessage(p_report_cap, sender);
+	ReportPathReporterCapabilities report_cap;
+	if (p_sub_pose.getNumPublishers() > 0 || p_sub_odom.getNumPublishers() > 0) {
+		ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_hist_local_plan;
+		cap_hist_local_plan.setMaxTargetResolution(0);
+		cap_hist_local_plan.setMinTargetResolution(0);
+		cap_hist_local_plan.setPathType(1);
+		report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_hist_local_plan);
+	}
+	if (p_sub_global_path.getNumPublishers() > 0) {
+		ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_global_plan;
+		cap_global_plan.setMaxTargetResolution(0);
+		cap_global_plan.setMinTargetResolution(0);
+		cap_global_plan.setPathType(2);
+		report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_global_plan);
+	}
+	if (p_sub_local_path.getNumPublishers() > 0) {
+		ReportPathReporterCapabilities::Body::PathReporterCapabilitiesList::PathReporterCapabilitiesRec cap_local_plan;
+		cap_local_plan.setMaxTargetResolution(0);
+		cap_local_plan.setMinTargetResolution(0);
+		cap_local_plan.setPathType(3);
+		report_cap.getBody()->getPathReporterCapabilitiesList()->addElement(cap_local_plan);
+	}
+	sendJausMessage(report_cap, sender);
 }
 
 bool PathReporter_ReceiveFSM::isSupported(QueryPath msg)
