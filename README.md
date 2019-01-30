@@ -7,9 +7,9 @@ Build status of latest version:
 
 ### List of service plugins in this repository:
 
-[iop_costmap2d_fkie: CostMap2D](iop_costmap2d_fkie/README.md)  
-[iop_measurement_sensor_fkie: MeasurementSensor](iop_measurement_sensor_fkie/README.md)  
-[iop_path_reporter_fkie: PathReporter](iop_path_reporter_fkie/README.md)  
+[fkie_iop_costmap2d: CostMap2D](fkie_iop_costmap2d/README.md)  
+[fkie_iop_measurement_sensor: MeasurementSensor](fkie_iop_measurement_sensor/README.md)  
+[fkie_iop_path_reporter: PathReporter](fkie_iop_path_reporter/README.md)  
 
 
 
