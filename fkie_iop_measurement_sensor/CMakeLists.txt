@@ -19,6 +19,7 @@ catkin_package(
         fkie_iop_component
         fkie_iop_events
         fkie_iop_msgs
+        roscpp
 )
 
 

@@ -23,6 +23,7 @@ catkin_package(
         fkie_iop_accesscontrol
         fkie_iop_component
         nav_msgs
+        roscpp
         tf2
         tf2_geometry_msgs
 )

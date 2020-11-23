@@ -5,10 +5,10 @@ project(fkie_iop_path_reporter)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-             geographic_msgs
-             gps_common
              fkie_iop_component
              fkie_iop_events
+             geographic_msgs
+             gps_common
              roscpp
              tf)
 
@@ -21,10 +21,11 @@ iop_export_service(urn_jaus_jss_iop_PathReporter)
 catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-        geographic_msgs
-        gps_common
         fkie_iop_component
         fkie_iop_events
+        geographic_msgs
+        gps_common
+        roscpp
         tf
 )
 
