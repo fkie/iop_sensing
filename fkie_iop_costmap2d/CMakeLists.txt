@@ -1,38 +1,35 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(fkie_iop_costmap2d)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-      fkie_iop_accesscontrol
-      fkie_iop_component
-      nav_msgs
-      roscpp
-      tf2
-      tf2_geometry_msgs
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
+
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic -Wno-ignored-qualifiers)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(fkie_iop_accesscontrol REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+
+
+###############
+## setup IOP ##
+###############
+iop_init()
+iop_export_service(
+  urn_jaus_jss_iop_CostMap2D
 )
-iop_init(COMPONENT_ID 0)
-
-###################################
-## catkin specific configuration ##
-###################################
-catkin_package(
-    LIBRARIES ${PROJECT_NAME}
-    CATKIN_DEPENDS
-        fkie_iop_accesscontrol
-        fkie_iop_component
-        nav_msgs
-        roscpp
-        tf2
-        tf2_geometry_msgs
-)
-
-###########
-## Build ##
-###########
-
-## Specify additional locations of files
 iop_code_generator(
   IDLS
     urn.jaus.jss.core-v1.1/AccessControl.xml
@@ -43,7 +40,6 @@ iop_code_generator(
   OVERRIDES
     include/urn_jaus_jss_iop_CostMap2D/CostMap2D_ReceiveFSM.h
     src/urn_jaus_jss_iop_CostMap2D/CostMap2D_ReceiveFSM.cpp
-    src/main.cpp
   EXTERN_SERVICES
     urn_jaus_jss_core_AccessControl
     urn_jaus_jss_core_Events
@@ -51,36 +47,47 @@ iop_code_generator(
   GENERATED_SOURCES cppfiles
 )
 
-include_directories(
-    ${catkin_INCLUDE_DIRS}
+###########
+## Build ##
+###########
+set(dependencies
+  fkie_iop_accesscontrol
+  nav_msgs
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
 )
-add_library(${PROJECT_NAME}
-            src/CostMap2DPlugin.cpp
+
+include_directories(
+  ${IOP_COMPONENT_INCLUDE_DIRS}
+)
+
+add_library(${PROJECT_NAME} SHARED
             ${cppfiles}
 )
 
-## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}
-                      ${catkin_LIBRARIES}
-)
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 
 #############
 ## Install ##
 #############
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-# Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
 install(
-   FILES ./plugin_iop.xml
-   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DIRECTORY ${IOP_INSTALL_INCLUDE_DIRS}
+  DESTINATION include/${PROJECT_NAME}
+  PATTERN "*.old" EXCLUDE
+  PATTERN "*.gen" EXCLUDE
 )
 
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+ament_export_include_directories(include ${IOP_COMPONENT_INCLUDE_DIRS})
+ament_export_libraries(${PROJECT_NAME})
+ament_export_dependencies(${dependencies})
+pluginlib_export_plugin_description_file(fkie_iop_component plugin_iop.xml)
+
+ament_package()

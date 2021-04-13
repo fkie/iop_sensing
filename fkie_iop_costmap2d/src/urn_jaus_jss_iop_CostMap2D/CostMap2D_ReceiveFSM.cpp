@@ -22,7 +22,7 @@ along with this program; or you can read the full license at
 
 
 #include "urn_jaus_jss_iop_CostMap2D/CostMap2D_ReceiveFSM.h"
-#include <fkie_iop_component/iop_config.h>
+#include <fkie_iop_component/iop_config.hpp>
 
 #include <tf2/convert.h>
 #include <tf2/transform_datatypes.h>
@@ -38,7 +38,8 @@ namespace urn_jaus_jss_iop_CostMap2D
 
 
 
-CostMap2D_ReceiveFSM::CostMap2D_ReceiveFSM(urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM)
+CostMap2D_ReceiveFSM::CostMap2D_ReceiveFSM(std::shared_ptr<iop::Component> cmp, urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM)
+: logger(cmp->get_logger().get_child("CostMap2D"))
 {
 
 	/*
@@ -48,10 +49,10 @@ CostMap2D_ReceiveFSM::CostMap2D_ReceiveFSM(urn_jaus_jss_core_Transport::Transpor
 	 */
 	context = new CostMap2D_ReceiveFSMContext(*this);
 
-	this->pTransport_ReceiveFSM = pTransport_ReceiveFSM;
-	this->pEvents_ReceiveFSM = pEvents_ReceiveFSM;
 	this->pAccessControl_ReceiveFSM = pAccessControl_ReceiveFSM;
-	tfListener = new tf2_ros::TransformListener(p_tf_buffer);
+	this->pEvents_ReceiveFSM = pEvents_ReceiveFSM;
+	this->pTransport_ReceiveFSM = pTransport_ReceiveFSM;
+	this->cmp = cmp;
 	p_tf_frame_odom = "odom";
 	p_tf_frame_robot = "base_link";
 	offset_yaw = 0;
@@ -75,31 +76,50 @@ void CostMap2D_ReceiveFSM::setupNotifications()
 	registerNotification("Receiving_Ready_Controlled", pAccessControl_ReceiveFSM->getHandler(), "InternalStateChange_To_AccessControl_ReceiveFSM_Receiving_Ready_Controlled", "CostMap2D_ReceiveFSM");
 	registerNotification("Receiving_Ready", pAccessControl_ReceiveFSM->getHandler(), "InternalStateChange_To_AccessControl_ReceiveFSM_Receiving_Ready", "CostMap2D_ReceiveFSM");
 	registerNotification("Receiving", pAccessControl_ReceiveFSM->getHandler(), "InternalStateChange_To_AccessControl_ReceiveFSM_Receiving", "CostMap2D_ReceiveFSM");
+}
 
+
+void CostMap2D_ReceiveFSM::setupIopConfiguration()
+{
+	iop::Config cfg(cmp, "CostMap2D");
 	pEvents_ReceiveFSM->get_event_handler().register_query(QueryCostMap2D::ID);
-	iop::Config cfg("~CostMap2D");
+	cfg.declare_param<std::string>("tf_frame_odom", p_tf_frame_odom, true,
+		rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
+		"Defines the odometry frame id.",
+		"Default: 'odom'");
+	cfg.declare_param<std::string>("tf_frame_robot", p_tf_frame_robot, true,
+		rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
+		"Defines the robot frame id.",
+		"Default: 'base_link'");
+	cfg.declare_param<int32_t>("map_max_edge_size", p_map_max_edge_size, true,
+		rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER,
+		"Width and height of the map reported by this service. The actual size depends also on resolution of OccupancyGrid.",
+		"Default: 255");
 	cfg.param<std::string>("tf_frame_odom", p_tf_frame_odom, p_tf_frame_odom);
 	cfg.param<std::string>("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
+	p_tf_buffer = std::make_unique<tf2_ros::Buffer>(cmp->get_clock());
+	p_tf_listener = std::make_shared<tf2_ros::TransformListener>(*p_tf_buffer);
+
 //	std::string prefix = tf::getPrefixParam(pnh);
 //	p_tf_frame_odom = tf::resolve(prefix, p_tf_frame_odom);
 //	p_tf_frame_robot = tf::resolve(prefix, p_tf_frame_robot);
 	cfg.param("offset_yaw", offset_yaw, offset_yaw);
 	cfg.param("map_max_edge_size", p_map_max_edge_size, p_map_max_edge_size);
 	//ROS subscriber:
-	costmap_sub = cfg.subscribe<nav_msgs::OccupancyGrid>("map", 1, &CostMap2D_ReceiveFSM::pMapCallback, this);
+	costmap_sub = cfg.create_subscription<nav_msgs::msg::OccupancyGrid>("map", 1, std::bind(&CostMap2D_ReceiveFSM::pMapCallback, this, std::placeholders::_1));
 
 }
 
 void CostMap2D_ReceiveFSM::addNoGoZoneAction(AddNoGoZone msg)
 {
 	/// Insert User Code HERE
-  ROS_WARN_NAMED("CostMap2D", "NoGoZones are not supported! (addNoGoZoneAction)");
+	RCLCPP_WARN(logger, "NoGoZones are not supported! (addNoGoZoneAction)");
 }
 
 void CostMap2D_ReceiveFSM::removeNoGoZoneAction(RemoveNoGoZone msg)
 {
 	/// Insert User Code HERE
-  ROS_WARN_NAMED("CostMap2D", "NoGoZones are not supported! (removeNoGoZoneAction)");
+	RCLCPP_WARN(logger, "NoGoZones are not supported! (removeNoGoZoneAction)");
 }
 
 void CostMap2D_ReceiveFSM::sendAddNoGoZoneResponseAction(AddNoGoZone msg, Receive::Body::ReceiveRec transportData)
@@ -110,7 +130,7 @@ void CostMap2D_ReceiveFSM::sendAddNoGoZoneResponseAction(AddNoGoZone msg, Receiv
 	uint8_t node_id = transportData.getSrcNodeID();
 	uint8_t component_id = transportData.getSrcComponentID();
 	JausAddress sender(subsystem_id, node_id, component_id);
-	ROS_DEBUG_NAMED("CostMap2D", "sendAddNoGoZoneResponseAction to %d.%d.%d", subsystem_id, node_id, component_id);
+	RCLCPP_DEBUG(logger, "sendAddNoGoZoneResponseAction to %d.%d.%d", subsystem_id, node_id, component_id);
 	AddNoGoZoneResponse response;
 	unsigned short int request_id = msg.getBody()->getNoGoZoneSeq()->getRequestIDRec()->getRequestID();
 	response.getBody()->getAddNoGoZoneResponseRec()->setRequestID(request_id);
@@ -127,9 +147,9 @@ void CostMap2D_ReceiveFSM::sendReportCostMap2DAction(QueryCostMap2D msg, Receive
 	uint8_t node_id = transportData.getSrcNodeID();
 	uint8_t component_id = transportData.getSrcComponentID();
 	JausAddress sender(subsystem_id, node_id, component_id);
-	ROS_DEBUG_NAMED("CostMap2D", "report cost map to %d.%d.%d", subsystem_id, node_id, component_id);
+	RCLCPP_DEBUG(logger, "report cost map to %d.%d.%d", subsystem_id, node_id, component_id);
 	ReportCostMap2D::Body::CostMap2DSeq::CostMap2DPoseVar *map_pose = p_costmap_msg.getBody()->getCostMap2DSeq()->getCostMap2DPoseVar();
-	ROS_DEBUG_NAMED("CostMap2D", "   local position of the map %f . %f . %f\n",
+	RCLCPP_DEBUG(logger, "   local position of the map %f . %f . %f\n",
 			map_pose->getCostMap2DLocalPoseRec()->getMapCenterX(),
 			map_pose->getCostMap2DLocalPoseRec()->getMapCenterY(),
 			map_pose->getCostMap2DLocalPoseRec()->getMapRotation());
@@ -143,7 +163,7 @@ void CostMap2D_ReceiveFSM::sendReportNoGoZonesAction(QueryNoGoZones msg, Receive
 	uint8_t node_id = transportData.getSrcNodeID();
 	uint8_t component_id = transportData.getSrcComponentID();
 	JausAddress sender(subsystem_id, node_id, component_id);
-	ROS_DEBUG_NAMED("CostMap2D", "sendReportNoGoZonesAction to %d.%d.%d", subsystem_id, node_id, component_id);
+	RCLCPP_DEBUG(logger, "sendReportNoGoZonesAction to %d.%d.%d", subsystem_id, node_id, component_id);
 	ReportNoGoZones response;
 	this->sendJausMessage(response, sender);
 }
@@ -169,14 +189,14 @@ bool CostMap2D_ReceiveFSM::zoneExists(RemoveNoGoZone msg)
 	return false;
 }
 
-void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr& map_in) {
+void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_in) {
 	try {
-		ROS_DEBUG_NAMED("CostMap2D", "Map received, transform...");
+		RCLCPP_DEBUG(logger, "Map received, transform...");
 		//get current robot to map transform:
-		geometry_msgs::TransformStamped tf_pose;
-		tf_pose = p_tf_buffer.lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, ros::Duration(1.5));
-		ROS_DEBUG_NAMED("CostMap2D", "  map origin: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
-		ROS_DEBUG_NAMED("CostMap2D", "  robot position from tf: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
+		geometry_msgs::msg::TransformStamped tf_pose;
+		p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, rclcpp::Duration(1.5));
+		RCLCPP_DEBUG(logger, "  map origin: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
+		RCLCPP_DEBUG(logger, "  robot position from tf: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
 		// apply map origin to robot position
 		tf2::Quaternion q(map_in->info.origin.orientation.x, map_in->info.origin.orientation.y, map_in->info.origin.orientation.z, map_in->info.origin.orientation.w);
 		tf2::Vector3 r(map_in->info.origin.position.x, map_in->info.origin.position.y, map_in->info.origin.position.z);
@@ -185,7 +205,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		tf2::Vector3 rr(tf_pose.transform.translation.x, tf_pose.transform.translation.y, tf_pose.transform.translation.z);
 		tf2::Transform transform_rob(qr, rr);
 		tf2::Transform tr_result = transform.inverse() * transform_rob;
-		ROS_DEBUG_NAMED("CostMap2D", "  transformed robot position %.2f, %.2f", tr_result.getOrigin().getX(), tr_result.getOrigin().getY());
+		RCLCPP_DEBUG(logger, "  transformed robot position %.2f, %.2f", tr_result.getOrigin().getX(), tr_result.getOrigin().getY());
 		ReportCostMap2D map;
 		ReportCostMap2D::Body::CostMap2DSeq::CostMap2DRec *map_size = map.getBody()->getCostMap2DSeq()->getCostMap2DRec();
 		ReportCostMap2D::Body::CostMap2DSeq::CostMap2DPoseVar *map_pose = map.getBody()->getCostMap2DSeq()->getCostMap2DPoseVar();
@@ -237,10 +257,10 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 			idx_height_start = map_in->info.height;
 		}
 
-		ROS_DEBUG_NAMED("CostMap2D", "  map size original [px]: %d x %d, used %d x %d", map_in->info.width, map_in->info.height, map_width, map_height);
-		ROS_DEBUG_NAMED("CostMap2D", "  robot position [px]:  %d, %d, offset %d, %d", x_res, y_res, x_offset_res, y_offset_res);
-		ROS_DEBUG_NAMED("CostMap2D", "  estimated robot offset if robot on boundary: %.2f, %.2f", x_offset_res * map_in->info.resolution, y_offset_res * map_in->info.resolution);
-		ROS_DEBUG_NAMED("CostMap2D", "  used index width [px]: %d - %d, height: %d - %d", idx_width_start, idx_width_end, idx_height_start, idx_height_end);
+		RCLCPP_DEBUG(logger, "  map size original [px]: %d x %d, used %d x %d", map_in->info.width, map_in->info.height, map_width, map_height);
+		RCLCPP_DEBUG(logger, "  robot position [px]:  %d, %d, offset %d, %d", x_res, y_res, x_offset_res, y_offset_res);
+		RCLCPP_DEBUG(logger, "  estimated robot offset if robot on boundary: %.2f, %.2f", x_offset_res * map_in->info.resolution, y_offset_res * map_in->info.resolution);
+		RCLCPP_DEBUG(logger, "  used index width [px]: %d - %d, height: %d - %d", idx_width_start, idx_width_end, idx_height_start, idx_height_end);
 
 		// set map dimensions in the IOP message
 		map_size->setNumberOfColumns(idx_width_end - idx_width_start);
@@ -268,18 +288,18 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		// get orientation of the map relative to odometry
 		double x_center = tf_pose.transform.translation.x + x_offset_res * map_in->info.resolution;
 		double y_center = tf_pose.transform.translation.y + y_offset_res * map_in->info.resolution;
-		tf_pose = p_tf_buffer.lookupTransform(p_tf_frame_odom, map_in->header.frame_id, map_in->header.stamp, ros::Duration(0.5));
+		tf_pose = p_tf_buffer->lookupTransform(p_tf_frame_odom, map_in->header.frame_id, map_in->header.stamp, rclcpp::Duration(0.5));
 		tf2::Quaternion q_odom_map(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
 		double map_yaw = tf2::getYaw(q_odom_map); // TODO: invert because IOP uses clockwise map rotation?
-		geometry_msgs::PoseStamped pose_center;
+		geometry_msgs::msg::PoseStamped pose_center;
 		pose_center.header = map_in->header;
 		pose_center.pose.position.x = x_center;
 		pose_center.pose.position.y = y_center;
 		pose_center.pose.orientation.w = 1.0;
-		pose_center = p_tf_buffer.transform(pose_center, p_tf_frame_odom, ros::Duration(0.3));
+		p_tf_buffer->transform(pose_center, pose_center, p_tf_frame_odom);
 		map_pose->getCostMap2DLocalPoseRec()->setMapRotation(map_yaw);
 		// get point of the robot position relative to odometry -> this is the local center coordinate of the map
-		ROS_DEBUG_NAMED("CostMap2D", "  estimated map center %.2f, %.2f, yaw: %.2f", pose_center.pose.position.x, pose_center.pose.position.y, map_yaw);
+		RCLCPP_DEBUG(logger, "  estimated map center %.2f, %.2f, yaw: %.2f", pose_center.pose.position.x, pose_center.pose.position.y, map_yaw);
 		map_pose->getCostMap2DLocalPoseRec()->setMapCenterX(pose_center.pose.position.x);
 		map_pose->getCostMap2DLocalPoseRec()->setMapCenterY(pose_center.pose.position.y);
 		// TODO: add global coordinate to the map
@@ -287,9 +307,9 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		p_costmap_msg = map;
 		pEvents_ReceiveFSM->get_event_handler().set_report(QueryCostMap2D::ID, &p_costmap_msg);
 	} catch (tf2::TransformException& ex) {
-		ROS_WARN_NAMED("CostMap2D", "TF Exception %s", ex.what());
+		RCLCPP_WARN(logger, "TF Exception %s", ex.what());
 	}
 }
 
 
-};
+}
