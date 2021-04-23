@@ -325,7 +325,7 @@ void PathReporter_ReceiveFSM::p_tf_callback()
 //		// set timestamp
 //		ReportLocalPose::Body::LocalPoseRec::TimeStamp ts;
 //		// current date/time based on current system
-//		iop::Timestamp stamp(ros::Time::now());
+//		iop::Timestamp stamp(cmp->now());
 //		ts.setDay(stamp.days);
 //		ts.setHour(stamp.hours);
 //		ts.setMinutes(stamp.minutes);

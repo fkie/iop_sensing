@@ -6,7 +6,6 @@ This repository is part of [ROS/IOP Bridge](https://github.com/fkie/iop_core/blo
 ### List of service plugins in this repository:
 
 [fkie_iop_costmap2d: CostMap2D](fkie_iop_costmap2d/README.md)  
-[fkie_iop_measurement_sensor: MeasurementSensor](fkie_iop_measurement_sensor/README.md)  
 [fkie_iop_path_reporter: PathReporter](fkie_iop_path_reporter/README.md)  
 
 

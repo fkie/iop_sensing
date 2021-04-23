@@ -42,11 +42,11 @@ _historical_odom (nav_msgs::Odometry)_
 
 > Position or Odometry to create the local historical path.
 
-_planned_global_path (nav_msgs::Path)_
+_planned_global_path (nav_msgs::msg::Path)_
 
 > A list of points for planned path.
 
-_planned_local_path (nav_msgs::Path)_
+_planned_local_path (nav_msgs::msg::Path)_
 
 > A list of points for local path.
 
