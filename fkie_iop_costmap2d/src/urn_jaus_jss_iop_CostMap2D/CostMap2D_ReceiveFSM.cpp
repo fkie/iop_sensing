@@ -193,7 +193,8 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::msg::OccupancyGrid::Sha
 	try {
 		RCLCPP_DEBUG(logger, "Map received, transform...");
 		//get current robot to map transform:
-		auto tf_pose = p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, rclcpp::Duration(1.5));
+		// auto tf_pose = p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, rclcpp::Duration(1.5));
+		auto tf_pose = p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, rclcpp::Time(0), rclcpp::Duration(1.5));
 		RCLCPP_DEBUG(logger, "  map origin: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
 		RCLCPP_DEBUG(logger, "  robot position from tf: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
 		// apply map origin to robot position
