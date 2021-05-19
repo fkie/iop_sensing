@@ -97,14 +97,14 @@ void PathReporter_ReceiveFSM::setupIopConfiguration()
 		// cfg.param("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
 		double tf_hz = 10.0;
 		cfg.param("tf_hz", tf_hz, tf_hz);
-		p_tf_buffer = std::make_unique<tf2_ros::Buffer>(cmp->get_clock());
-		p_tf_listener = std::make_shared<tf2_ros::TransformListener>(*p_tf_buffer);
 		if (tf_hz == 0.0) {
 			tf_hz = 10.0;
 		}
 		p_tf_timer.set_rate(tf_hz);
 		p_tf_timer.start();
 	}
+	p_tf_buffer = std::make_unique<tf2_ros::Buffer>(cmp->get_clock());
+	p_tf_listener = std::make_shared<tf2_ros::TransformListener>(*p_tf_buffer);
 }
 
 void PathReporter_ReceiveFSM::sendReportPathAction(QueryPath msg, Receive::Body::ReceiveRec transportData)
@@ -389,7 +389,7 @@ bool PathReporter_ReceiveFSM::p_transform_pose(geometry_msgs::msg::PoseStamped& 
 {
 	try {
 		if (pose.header.frame_id.compare(target_frame) != 0) {
-			p_tf_buffer->lookupTransform(p_tf_frame_robot, pose.header.frame_id, pose.header.stamp, rclcpp::Duration(0.3));
+			p_tf_buffer->lookupTransform(p_tf_frame_robot, pose.header.frame_id, rclcpp::Time(pose.header.stamp), rclcpp::Duration(0.3));
 			auto pose_out = geometry_msgs::msg::PoseStamped();
 			p_tf_buffer->transform(pose, pose, p_tf_frame_world);
 		}
