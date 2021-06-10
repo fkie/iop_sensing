@@ -7,7 +7,7 @@ Reports local historical and {local, global} planned paths.
 
 #### Parameter:
 
-_tf_frame_world (str_, Default: "/world")
+_tf_frame_world (str_, Default: "world")
 
 > TF frame id used in ROS for global coordinates.
 

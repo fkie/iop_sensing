@@ -30,7 +30,7 @@ PathReporter_ReceiveFSM::PathReporter_ReceiveFSM(std::shared_ptr<iop::Component>
 	this->pEvents_ReceiveFSM = pEvents_ReceiveFSM;
 	this->pTransport_ReceiveFSM = pTransport_ReceiveFSM;
 	this->cmp = cmp;
-	p_tf_frame_world = "/world";
+	p_tf_frame_world = "world";
 	p_tf_frame_odom = "odom";
 	p_tf_frame_robot = "base_link";
 	p_utm_zone = "32U";
@@ -65,7 +65,7 @@ void PathReporter_ReceiveFSM::setupIopConfiguration()
 	cfg.declare_param<std::string>("tf_frame_world", p_tf_frame_world, true,
 		rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
 		"TF frame id used in ROS for global coordinates.",
-		"Default: '/world'");
+		"Default: 'world'");
 	cfg.declare_param<std::string>("tf_frame_odom", p_tf_frame_odom, true,
 		rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
 		"Frame id of local coordinates published to IOP.",
