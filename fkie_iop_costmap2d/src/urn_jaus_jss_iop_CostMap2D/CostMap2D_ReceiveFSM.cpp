@@ -126,11 +126,8 @@ void CostMap2D_ReceiveFSM::sendAddNoGoZoneResponseAction(AddNoGoZone msg, Receiv
 {
 	/// Insert User Code HERE
 	// report: NoGoZones are not supported
-	uint16_t subsystem_id = transportData.getSrcSubsystemID();
-	uint8_t node_id = transportData.getSrcNodeID();
-	uint8_t component_id = transportData.getSrcComponentID();
-	JausAddress sender(subsystem_id, node_id, component_id);
-	RCLCPP_DEBUG(logger, "sendAddNoGoZoneResponseAction to %d.%d.%d", subsystem_id, node_id, component_id);
+	JausAddress sender = transportData.getAddress();
+	RCLCPP_DEBUG(logger, "sendAddNoGoZoneResponseAction to %s", sender.str().c_str());
 	AddNoGoZoneResponse response;
 	unsigned short int request_id = msg.getBody()->getNoGoZoneSeq()->getRequestIDRec()->getRequestID();
 	response.getBody()->getAddNoGoZoneResponseRec()->setRequestID(request_id);
@@ -143,11 +140,8 @@ void CostMap2D_ReceiveFSM::sendAddNoGoZoneResponseAction(AddNoGoZone msg, Receiv
 void CostMap2D_ReceiveFSM::sendReportCostMap2DAction(QueryCostMap2D msg, Receive::Body::ReceiveRec transportData)
 {
 	/// Insert User Code HERE
-	uint16_t subsystem_id = transportData.getSrcSubsystemID();
-	uint8_t node_id = transportData.getSrcNodeID();
-	uint8_t component_id = transportData.getSrcComponentID();
-	JausAddress sender(subsystem_id, node_id, component_id);
-	RCLCPP_DEBUG(logger, "report cost map to %d.%d.%d", subsystem_id, node_id, component_id);
+	JausAddress sender = transportData.getAddress();
+	RCLCPP_DEBUG(logger, "report cost map to %s", sender.str().c_str());
 	ReportCostMap2D::Body::CostMap2DSeq::CostMap2DPoseVar *map_pose = p_costmap_msg.getBody()->getCostMap2DSeq()->getCostMap2DPoseVar();
 	RCLCPP_DEBUG(logger, "   local position of the map %f . %f . %f\n",
 			map_pose->getCostMap2DLocalPoseRec()->getMapCenterX(),
@@ -159,11 +153,8 @@ void CostMap2D_ReceiveFSM::sendReportCostMap2DAction(QueryCostMap2D msg, Receive
 void CostMap2D_ReceiveFSM::sendReportNoGoZonesAction(QueryNoGoZones msg, Receive::Body::ReceiveRec transportData)
 {
 	/// Insert User Code HERE
-	uint16_t subsystem_id = transportData.getSrcSubsystemID();
-	uint8_t node_id = transportData.getSrcNodeID();
-	uint8_t component_id = transportData.getSrcComponentID();
-	JausAddress sender(subsystem_id, node_id, component_id);
-	RCLCPP_DEBUG(logger, "sendReportNoGoZonesAction to %d.%d.%d", subsystem_id, node_id, component_id);
+	JausAddress sender = transportData.getAddress();
+	RCLCPP_DEBUG(logger, "sendReportNoGoZonesAction to %s", sender.str().c_str());
 	ReportNoGoZones response;
 	this->sendJausMessage(response, sender);
 }
