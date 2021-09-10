@@ -1,0 +1,5 @@
+<library path="fkie_iop_measurement_sensor">
+	<class name="MeasurementSensor" type="urn_jaus_jss_iop_MeasurementSensor::MeasurementSensorService" base_class_type="JTS::Service"
+		id="urn:jaus:jss:iop:MeasurementSensor" version="1.1">
+	</class>
+</library>
