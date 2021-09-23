@@ -176,7 +176,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		geometry_msgs::TransformStamped tf_pose;
 		tf_pose = p_tf_buffer.lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, ros::Duration(1.5));
 		ROS_DEBUG_NAMED("CostMap2D", "  map origin: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
-		ROS_DEBUG_NAMED("CostMap2D", "  robot position from tf: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
+		ROS_DEBUG_NAMED("CostMap2D", "  robot position from tf: %.2f, %.2f",  tf_pose.transform.translation.x,  tf_pose.transform.translation.y);
 		// apply map origin to robot position
 		tf2::Quaternion q(map_in->info.origin.orientation.x, map_in->info.origin.orientation.y, map_in->info.origin.orientation.z, map_in->info.origin.orientation.w);
 		tf2::Vector3 r(map_in->info.origin.position.x, map_in->info.origin.position.y, map_in->info.origin.position.z);
