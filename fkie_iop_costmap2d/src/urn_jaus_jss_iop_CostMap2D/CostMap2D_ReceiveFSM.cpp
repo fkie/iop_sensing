@@ -184,8 +184,8 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::msg::OccupancyGrid::Sha
 	try {
 		RCLCPP_DEBUG(logger, "Map received, transform...");
 		//get current robot to map transform:
-		// auto tf_pose = p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, rclcpp::Duration(1.5));
-		auto tf_pose = p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, rclcpp::Time(0), rclcpp::Duration(1.5));
+		// auto tf_pose = p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, map_in->header.stamp, rclcpp::Duration::from_seconds(1.5));
+		auto tf_pose = p_tf_buffer->lookupTransform(map_in->header.frame_id, p_tf_frame_robot, rclcpp::Time(0), rclcpp::Duration::from_seconds(1.5));
 		RCLCPP_DEBUG(logger, "  map origin: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
 		RCLCPP_DEBUG(logger, "  robot position from tf: %.2f, %.2f", tf_pose.transform.translation.x, tf_pose.transform.translation.y);
 		// apply map origin to robot position
@@ -279,7 +279,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::msg::OccupancyGrid::Sha
 		// get orientation of the map relative to odometry
 		double x_center = tf_pose.transform.translation.x + x_offset_res * map_in->info.resolution;
 		double y_center = tf_pose.transform.translation.y + y_offset_res * map_in->info.resolution;
-		tf_pose = p_tf_buffer->lookupTransform(p_tf_frame_odom, map_in->header.frame_id, map_in->header.stamp, rclcpp::Duration(0.5));
+		tf_pose = p_tf_buffer->lookupTransform(p_tf_frame_odom, map_in->header.frame_id, map_in->header.stamp, rclcpp::Duration::from_seconds(0.5));
 		tf2::Quaternion q_odom_map(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
 		double map_yaw = tf2::getYaw(q_odom_map); // TODO: invert because IOP uses clockwise map rotation?
 		geometry_msgs::msg::PoseStamped pose_center;

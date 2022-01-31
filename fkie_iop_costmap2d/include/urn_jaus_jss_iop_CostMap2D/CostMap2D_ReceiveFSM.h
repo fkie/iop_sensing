@@ -45,6 +45,7 @@ along with this program; or you can read the full license at
 
 #include <std_msgs/msg/string.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
 namespace urn_jaus_jss_iop_CostMap2D

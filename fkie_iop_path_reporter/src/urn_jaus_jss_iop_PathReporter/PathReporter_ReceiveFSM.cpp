@@ -389,7 +389,7 @@ bool PathReporter_ReceiveFSM::p_transform_pose(geometry_msgs::msg::PoseStamped& 
 {
 	try {
 		if (pose.header.frame_id.compare(target_frame) != 0) {
-			p_tf_buffer->lookupTransform(p_tf_frame_robot, pose.header.frame_id, rclcpp::Time(pose.header.stamp), rclcpp::Duration(0.3));
+			p_tf_buffer->lookupTransform(p_tf_frame_robot, pose.header.frame_id, rclcpp::Time(pose.header.stamp), rclcpp::Duration::from_seconds(0.3));
 			auto pose_out = geometry_msgs::msg::PoseStamped();
 			p_tf_buffer->transform(pose, pose, p_tf_frame_world);
 		}

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>fkie_iop_path_reporter</name>
-  <version>1.1.0</version>
+  <version>2.1.0</version>
   <description>Service provides a mechanism for reporting the past and/or future expected path of the vehicle.</description>
 
   <author>Alexander Tiderko</author>
