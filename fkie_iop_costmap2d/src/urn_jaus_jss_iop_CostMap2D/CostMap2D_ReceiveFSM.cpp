@@ -178,7 +178,11 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		ROS_DEBUG_NAMED("CostMap2D", "  map origin: %.2f, %.2f", map_in->info.origin.position.x, map_in->info.origin.position.y);
 		ROS_DEBUG_NAMED("CostMap2D", "  robot position from tf: %.2f, %.2f",  tf_pose.transform.translation.x,  tf_pose.transform.translation.y);
 		// apply map origin to robot position
-		tf2::Quaternion q(map_in->info.origin.orientation.x, map_in->info.origin.orientation.y, map_in->info.origin.orientation.z, map_in->info.origin.orientation.w);
+		double w = map_in->info.origin.orientation.w;
+		if (map_in->info.origin.orientation.x == 0 && map_in->info.origin.orientation.y == 0 && map_in->info.origin.orientation.z == 0) {
+			w = 1.0;
+		}
+		tf2::Quaternion q(map_in->info.origin.orientation.x, map_in->info.origin.orientation.y, map_in->info.origin.orientation.z, w);
 		tf2::Vector3 r(map_in->info.origin.position.x, map_in->info.origin.position.y, map_in->info.origin.position.z);
 		tf2::Transform transform(q, r);
 		tf2::Quaternion qr(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
@@ -266,22 +270,23 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 			}
 		}
 		// get orientation of the map relative to odometry
-		double x_center = tf_pose.transform.translation.x + x_offset_res * map_in->info.resolution;
-		double y_center = tf_pose.transform.translation.y + y_offset_res * map_in->info.resolution;
-		tf_pose = p_tf_buffer.lookupTransform(p_tf_frame_odom, map_in->header.frame_id, map_in->header.stamp, ros::Duration(0.5));
-		tf2::Quaternion q_odom_map(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
-		double map_yaw = tf2::getYaw(q_odom_map); // TODO: invert because IOP uses clockwise map rotation?
-		geometry_msgs::PoseStamped pose_center;
-		pose_center.header = map_in->header;
-		pose_center.pose.position.x = x_center;
-		pose_center.pose.position.y = y_center;
-		pose_center.pose.orientation.w = 1.0;
-		pose_center = p_tf_buffer.transform(pose_center, p_tf_frame_odom, ros::Duration(0.3));
+		double x_center = ((idx_width_end - idx_width_start) / 2.0 + idx_width_start) * map_in->info.resolution;
+		double y_center = ((idx_height_start - idx_height_end) / 2.0 + idx_height_end) * map_in->info.resolution;
+		tf_pose = p_tf_buffer.lookupTransform(p_tf_frame_robot, map_in->header.frame_id, map_in->header.stamp, ros::Duration(0.5));
+		tf2::Quaternion q_robot_map(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
+		double map_yaw = tf2::getYaw(q_robot_map); // TODO: invert because IOP uses clockwise map rotation?
+		ROS_DEBUG_NAMED("CostMap2D", "  map center %.2f, %.2f, yaw: %.2f", x_center, y_center, map_yaw);
+		tf2::Quaternion qc(0, 0, 0, 1);
+		tf2::Vector3 vc(x_center, y_center, 0);
+		tf2::Transform transform_center(qc, vc);
+		tf2::Transform tr_center_result = tr_result.inverse() * transform_center;
+		ROS_DEBUG_NAMED("CostMap2D", "  transformed center position %.2f, %.2f", tr_center_result.getOrigin().getX(), tr_center_result.getOrigin().getY());
+		// map_yaw = tf2::getYaw(pose_center.pose.orientation);
 		map_pose->getCostMap2DLocalPoseRec()->setMapRotation(map_yaw);
 		// get point of the robot position relative to odometry -> this is the local center coordinate of the map
-		ROS_DEBUG_NAMED("CostMap2D", "  estimated map center %.2f, %.2f, yaw: %.2f", pose_center.pose.position.x, pose_center.pose.position.y, map_yaw);
-		map_pose->getCostMap2DLocalPoseRec()->setMapCenterX(pose_center.pose.position.x);
-		map_pose->getCostMap2DLocalPoseRec()->setMapCenterY(pose_center.pose.position.y);
+		ROS_DEBUG_NAMED("CostMap2D", "  estimated map center %.2f, %.2f, yaw: %.2f", tr_center_result.getOrigin().getX(), tr_center_result.getOrigin().getY(), map_yaw);
+		map_pose->getCostMap2DLocalPoseRec()->setMapCenterX(tr_center_result.getOrigin().getX());
+		map_pose->getCostMap2DLocalPoseRec()->setMapCenterY(tr_center_result.getOrigin().getY());
 		// TODO: add global coordinate to the map
 		// set map
 		p_costmap_msg = map;
@@ -290,6 +295,5 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		ROS_WARN_NAMED("CostMap2D", "TF Exception %s", ex.what());
 	}
 }
-
 
 };
