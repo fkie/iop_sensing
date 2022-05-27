@@ -274,7 +274,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		double y_center = ((idx_height_start - idx_height_end) / 2.0 + idx_height_end) * map_in->info.resolution;
 		tf_pose = p_tf_buffer.lookupTransform(p_tf_frame_robot, map_in->header.frame_id, map_in->header.stamp, ros::Duration(0.5));
 		tf2::Quaternion q_robot_map(tf_pose.transform.rotation.x, tf_pose.transform.rotation.y, tf_pose.transform.rotation.z, tf_pose.transform.rotation.w);
-		double map_yaw = tf2::getYaw(q_robot_map); // TODO: invert because IOP uses clockwise map rotation?
+		double map_yaw = tf2::getYaw(q_robot_map) + offset_yaw; // TODO: invert because IOP uses clockwise map rotation?
 		ROS_DEBUG_NAMED("CostMap2D", "  map center %.2f, %.2f, yaw: %.2f", x_center, y_center, map_yaw);
 		tf2::Quaternion qc(0, 0, 0, 1);
 		tf2::Vector3 vc(x_center, y_center, 0);
@@ -282,7 +282,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		tf2::Transform tr_center_result = tr_result.inverse() * transform_center;
 		ROS_DEBUG_NAMED("CostMap2D", "  transformed center position %.2f, %.2f", tr_center_result.getOrigin().getX(), tr_center_result.getOrigin().getY());
 		// map_yaw = tf2::getYaw(pose_center.pose.orientation);
-		map_pose->getCostMap2DLocalPoseRec()->setMapRotation(map_yaw);
+		map_pose->getCostMap2DLocalPoseRec()->setMapRotation(-map_yaw);
 		// get point of the robot position relative to odometry -> this is the local center coordinate of the map
 		ROS_DEBUG_NAMED("CostMap2D", "  estimated map center %.2f, %.2f, yaw: %.2f", tr_center_result.getOrigin().getX(), tr_center_result.getOrigin().getY(), map_yaw);
 		map_pose->getCostMap2DLocalPoseRec()->setMapCenterX(tr_center_result.getOrigin().getX());
