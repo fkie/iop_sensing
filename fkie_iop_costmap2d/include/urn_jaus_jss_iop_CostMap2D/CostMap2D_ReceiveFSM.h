@@ -87,6 +87,7 @@ protected:
 	std::string p_tf_frame_odom;
 	std::string p_tf_frame_robot;
 	double offset_yaw;
+	double orientation_yaw;
 	int p_map_max_edge_size;
 	ros::Subscriber costmap_sub;
 	ReportCostMap2D p_costmap_msg;

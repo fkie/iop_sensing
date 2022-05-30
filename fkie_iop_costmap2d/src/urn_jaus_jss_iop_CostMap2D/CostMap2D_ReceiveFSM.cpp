@@ -55,6 +55,7 @@ CostMap2D_ReceiveFSM::CostMap2D_ReceiveFSM(urn_jaus_jss_core_Transport::Transpor
 	p_tf_frame_odom = "odom";
 	p_tf_frame_robot = "base_link";
 	offset_yaw = 0;
+	orientation_yaw = -1.0;
 	p_map_max_edge_size = 255;
 }
 
@@ -84,6 +85,11 @@ void CostMap2D_ReceiveFSM::setupNotifications()
 //	p_tf_frame_odom = tf::resolve(prefix, p_tf_frame_odom);
 //	p_tf_frame_robot = tf::resolve(prefix, p_tf_frame_robot);
 	cfg.param("offset_yaw", offset_yaw, offset_yaw);
+	bool invert_orientation = false;
+	cfg.param("invert_orientation", invert_orientation, invert_orientation);
+	if (invert_orientation) {
+		orientation_yaw = 1.0;
+	}
 	cfg.param("map_max_edge_size", p_map_max_edge_size, p_map_max_edge_size);
 	//ROS subscriber:
 	costmap_sub = cfg.subscribe<nav_msgs::OccupancyGrid>("map", 1, &CostMap2D_ReceiveFSM::pMapCallback, this);
@@ -282,7 +288,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::OccupancyGrid::ConstPtr
 		tf2::Transform tr_center_result = tr_result.inverse() * transform_center;
 		ROS_DEBUG_NAMED("CostMap2D", "  transformed center position %.2f, %.2f", tr_center_result.getOrigin().getX(), tr_center_result.getOrigin().getY());
 		// map_yaw = tf2::getYaw(pose_center.pose.orientation);
-		map_pose->getCostMap2DLocalPoseRec()->setMapRotation(-map_yaw);
+		map_pose->getCostMap2DLocalPoseRec()->setMapRotation(map_yaw * orientation_yaw);
 		// get point of the robot position relative to odometry -> this is the local center coordinate of the map
 		ROS_DEBUG_NAMED("CostMap2D", "  estimated map center %.2f, %.2f, yaw: %.2f", tr_center_result.getOrigin().getX(), tr_center_result.getOrigin().getY(), map_yaw);
 		map_pose->getCostMap2DLocalPoseRec()->setMapCenterX(tr_center_result.getOrigin().getX());
