@@ -23,6 +23,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(fkie_iop_accesscontrol REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -58,6 +59,7 @@ iop_code_generator(
 ###########
 set(dependencies
   fkie_iop_accesscontrol
+  geometry_msgs
   nav_msgs
   tf2
   tf2_geometry_msgs
