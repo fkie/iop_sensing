@@ -24,7 +24,7 @@ along with this program; or you can read the full license at
 #include "urn_jaus_jss_iop_CostMap2D/CostMap2D_ReceiveFSM.h"
 #include <fkie_iop_component/iop_config.hpp>
 
-#include <geometry_msgs/msgs/pose_stamped.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <tf2/convert.h>
 #include <tf2/transform_datatypes.h>
 #include <tf2/LinearMath/Quaternion.h>
