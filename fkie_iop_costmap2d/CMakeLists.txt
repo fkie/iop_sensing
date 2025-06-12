@@ -27,7 +27,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 
@@ -64,7 +63,6 @@ set(dependencies
   nav_msgs
   tf2
   tf2_geometry_msgs
-  tf2_msgs
   tf2_ros
 )
 
