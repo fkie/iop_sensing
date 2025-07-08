@@ -270,7 +270,7 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::msg::OccupancyGrid::Sha
 				datarec.setCost(255);
 				if ( 0 <= idx_map_y + x_i and idx_map_y + x_i < map_in->data.size()) {
 					int map_val = map_in->data[idx_map_y + x_i];
-					if (map_val  >= 0) {
+					if (map_val  == 100) {
 						datarec.setCost(map_val * 2);
 					}
 				}
