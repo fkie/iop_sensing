@@ -67,8 +67,9 @@ set(dependencies
 )
 
 include_directories(
-  ${fkie_iop_accesscontrol_INCLUDE_DIRS}
   ${IOP_COMPONENT_INCLUDE_DIRS}
+  ${fkie_iop_accesscontrol_INCLUDE_DIRS}
+  ${tf2_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} SHARED
