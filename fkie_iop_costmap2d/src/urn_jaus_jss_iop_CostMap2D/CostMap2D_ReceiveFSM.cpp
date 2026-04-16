@@ -25,11 +25,11 @@ along with this program; or you can read the full license at
 #include <fkie_iop_component/iop_config.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <tf2/convert.h>
-#include <tf2/transform_datatypes.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2/LinearMath/Transform.h>
-#include <tf2/utils.h>
+#include <tf2/convert.hpp>
+#include <tf2/transform_datatypes.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/LinearMath/Transform.hpp>
+#include <tf2/utils.hpp>
 
 
 using namespace JTS;

@@ -69,6 +69,8 @@ include_directories(
   ${IOP_COMPONENT_INCLUDE_DIRS}
   ${fkie_iop_events_INCLUDE_DIRS}
   ${tf2_INCLUDE_DIRS}
+  ${tf2_geometry_msgs_INCLUDE_DIRS}
+  ${tf2_ros_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} SHARED
