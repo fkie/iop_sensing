@@ -268,10 +268,11 @@ void CostMap2D_ReceiveFSM::pMapCallback (const nav_msgs::msg::OccupancyGrid::Sha
 			for (int x_i = idx_width_start; x_i < idx_width_end; x_i++) {
 				ReportCostMap2D::Body::CostMap2DSeq::CostMap2DDataVar::CostDataList::CostDataRec datarec;
 				datarec.setCost(255);
-				if ( 0 <= idx_map_y + x_i and idx_map_y + x_i < map_in->data.size()) {
-					int map_val = map_in->data[idx_map_y + x_i];
-					if (map_val  == 100) {
-						datarec.setCost(map_val * 2);
+				int index = idx_map_y + x_i;
+				if ( 0 <= index && index < map_in->data.size()) {
+					int map_val = map_in->data[index];
+					if (map_val != -1) {
+						datarec.setCost(map_val * 2.5);
 					}
 				}
 				map_data->getCostDataList()->addElement(datarec);
