@@ -20,18 +20,15 @@ along with this program; or you can read the full license at
 
 /** \author Alexander Tiderko */
 
-
-
-
 #ifndef MEASUREMENTSENSOR_RECEIVEFSM_H
 #define MEASUREMENTSENSOR_RECEIVEFSM_H
 
-#include "JausUtils.h"
 #include "InternalEvents/InternalEventHandler.h"
-#include "Transport/JausTransport.h"
 #include "JTSStateMachine.h"
-#include "urn_jaus_jss_iop_MeasurementSensor/Messages/MessageSet.h"
+#include "JausUtils.h"
+#include "Transport/JausTransport.h"
 #include "urn_jaus_jss_iop_MeasurementSensor/InternalEvents/InternalEventsSet.h"
+#include "urn_jaus_jss_iop_MeasurementSensor/Messages/MessageSet.h"
 
 #include "InternalEvents/Receive.h"
 #include "InternalEvents/Send.h"
@@ -42,50 +39,40 @@ along with this program; or you can read the full license at
 #include <fkie_iop_msgs/msg/measurement.hpp>
 
 #include "MeasurementSensor_ReceiveFSM_sm.h"
-#include <rclcpp/rclcpp.hpp>
 #include <fkie_iop_component/iop_component.hpp>
+#include <rclcpp/rclcpp.hpp>
 
+namespace urn_jaus_jss_iop_MeasurementSensor {
 
-namespace urn_jaus_jss_iop_MeasurementSensor
-{
-
-class DllExport MeasurementSensor_ReceiveFSM : public JTS::StateMachine
-{
+class DllExport MeasurementSensor_ReceiveFSM : public JTS::StateMachine {
 public:
-	MeasurementSensor_ReceiveFSM(std::shared_ptr<iop::Component> cmp, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM);
-	virtual ~MeasurementSensor_ReceiveFSM();
+    MeasurementSensor_ReceiveFSM(std::shared_ptr<iop::Component> cmp, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM);
+    virtual ~MeasurementSensor_ReceiveFSM();
 
-	/// Handle notifications on parent state changes
-	virtual void setupNotifications();
-	virtual void setupIopConfiguration();
+    /// Handle notifications on parent state changes
+    virtual void setupNotifications();
+    virtual void setupIopConfiguration();
 
+    /// Action Methods
+    virtual void sendReportMeasurementAction(Receive::Body::ReceiveRec transportData);
 
-	/// Action Methods
-	virtual void sendReportMeasurementAction(Receive::Body::ReceiveRec transportData);
+    /// Guard Methods
 
-
-	/// Guard Methods
-
-
-
-	MeasurementSensor_ReceiveFSMContext *context;
+    MeasurementSensor_ReceiveFSMContext* context;
 
 protected:
+    /// References to parent FSMs
+    urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM;
+    urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM;
 
-	/// References to parent FSMs
-	urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM;
-	urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM;
+    std::shared_ptr<iop::Component> cmp;
+    rclcpp::Logger logger;
+    rclcpp::Subscription<fkie_iop_msgs::msg::Measurement>::SharedPtr p_measurement_sub;
+    ReportMeasurement p_report_measurement;
 
-	std::shared_ptr<iop::Component> cmp;
-	rclcpp::Logger logger;
-	rclcpp::Subscription<fkie_iop_msgs::msg::Measurement>::SharedPtr p_measurement_sub;
-	ReportMeasurement p_report_measurement;
-
-	void measurementReceived(const fkie_iop_msgs::msg::Measurement::SharedPtr measurement);
-
+    void measurementReceived(const fkie_iop_msgs::msg::Measurement::SharedPtr measurement);
 };
 
 }
 
 #endif // MEASUREMENTSENSOR_RECEIVEFSM_H
-

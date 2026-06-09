@@ -20,16 +20,15 @@ along with this program; or you can read the full license at
 
 /** \author Alexander Tiderko */
 
-
 #ifndef COSTMAP2D_RECEIVEFSM_H
 #define COSTMAP2D_RECEIVEFSM_H
 
-#include "JausUtils.h"
 #include "InternalEvents/InternalEventHandler.h"
-#include "Transport/JausTransport.h"
 #include "JTSStateMachine.h"
-#include "urn_jaus_jss_iop_CostMap2D/Messages/MessageSet.h"
+#include "JausUtils.h"
+#include "Transport/JausTransport.h"
 #include "urn_jaus_jss_iop_CostMap2D/InternalEvents/InternalEventsSet.h"
+#include "urn_jaus_jss_iop_CostMap2D/Messages/MessageSet.h"
 
 #include "InternalEvents/Receive.h"
 #include "InternalEvents/Send.h"
@@ -38,66 +37,59 @@ along with this program; or you can read the full license at
 #include "urn_jaus_jss_core_Events/Events_ReceiveFSM.h"
 #include "urn_jaus_jss_core_Transport/Transport_ReceiveFSM.h"
 
-
 #include "CostMap2D_ReceiveFSM_sm.h"
-#include <rclcpp/rclcpp.hpp>
 #include <fkie_iop_component/iop_component.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-#include <std_msgs/msg/string.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.hpp>
 #include <tf2_ros/transform_listener.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-namespace urn_jaus_jss_iop_CostMap2D
-{
+namespace urn_jaus_jss_iop_CostMap2D {
 
-class DllExport CostMap2D_ReceiveFSM : public JTS::StateMachine
-{
+class DllExport CostMap2D_ReceiveFSM : public JTS::StateMachine {
 public:
-	CostMap2D_ReceiveFSM(std::shared_ptr<iop::Component> cmp, urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM);
-	virtual ~CostMap2D_ReceiveFSM();
+    CostMap2D_ReceiveFSM(std::shared_ptr<iop::Component> cmp, urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM, urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM, urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM);
+    virtual ~CostMap2D_ReceiveFSM();
 
-	/// Handle notifications on parent state changes
-	virtual void setupNotifications();
-	virtual void setupIopConfiguration();
+    /// Handle notifications on parent state changes
+    virtual void setupNotifications();
+    virtual void setupIopConfiguration();
 
-	/// Action Methods
-	virtual void addNoGoZoneAction(AddNoGoZone msg);
-	virtual void removeNoGoZoneAction(RemoveNoGoZone msg);
-	virtual void sendAddNoGoZoneResponseAction(AddNoGoZone msg, Receive::Body::ReceiveRec transportData);
-	virtual void sendReportCostMap2DAction(QueryCostMap2D msg, Receive::Body::ReceiveRec transportData);
-	virtual void sendReportNoGoZonesAction(QueryNoGoZones msg, Receive::Body::ReceiveRec transportData);
+    /// Action Methods
+    virtual void addNoGoZoneAction(AddNoGoZone msg);
+    virtual void removeNoGoZoneAction(RemoveNoGoZone msg);
+    virtual void sendAddNoGoZoneResponseAction(AddNoGoZone msg, Receive::Body::ReceiveRec transportData);
+    virtual void sendReportCostMap2DAction(QueryCostMap2D msg, Receive::Body::ReceiveRec transportData);
+    virtual void sendReportNoGoZonesAction(QueryNoGoZones msg, Receive::Body::ReceiveRec transportData);
 
+    /// Guard Methods
+    virtual bool isControllingClient(Receive::Body::ReceiveRec transportData);
+    virtual bool isSupported(AddNoGoZone msg);
+    virtual bool zoneExists(RemoveNoGoZone msg);
 
-	/// Guard Methods
-	virtual bool isControllingClient(Receive::Body::ReceiveRec transportData);
-	virtual bool isSupported(AddNoGoZone msg);
-	virtual bool zoneExists(RemoveNoGoZone msg);
-
-
-
-	CostMap2D_ReceiveFSMContext *context;
+    CostMap2D_ReceiveFSMContext* context;
 
 protected:
+    /// References to parent FSMs
+    urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM;
+    urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM;
+    urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM;
 
-	/// References to parent FSMs
-	urn_jaus_jss_core_AccessControl::AccessControl_ReceiveFSM* pAccessControl_ReceiveFSM;
-	urn_jaus_jss_core_Events::Events_ReceiveFSM* pEvents_ReceiveFSM;
-	urn_jaus_jss_core_Transport::Transport_ReceiveFSM* pTransport_ReceiveFSM;
+    std::shared_ptr<iop::Component> cmp;
+    rclcpp::Logger logger;
+    std::unique_ptr<tf2_ros::Buffer> p_tf_buffer;
+    std::shared_ptr<tf2_ros::TransformListener> p_tf_listener;
+    std::string p_tf_frame_odom;
+    std::string p_tf_frame_robot;
+    double offset_yaw;
+    int p_map_max_edge_size;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub;
+    ReportCostMap2D p_costmap_msg;
 
-	std::shared_ptr<iop::Component> cmp;
-	rclcpp::Logger logger;
-	std::unique_ptr<tf2_ros::Buffer> p_tf_buffer;
-	std::shared_ptr<tf2_ros::TransformListener> p_tf_listener;
-	std::string p_tf_frame_odom;
-	std::string p_tf_frame_robot;
-	double offset_yaw;
-	int p_map_max_edge_size;
-	rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub;
-	ReportCostMap2D p_costmap_msg;
-
-	void pMapCallback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_in);
+    void pMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map_in);
 };
 
 }
