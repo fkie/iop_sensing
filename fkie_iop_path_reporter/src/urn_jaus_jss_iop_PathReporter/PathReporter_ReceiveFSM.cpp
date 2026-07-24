@@ -55,32 +55,26 @@ void PathReporter_ReceiveFSM::setupIopConfiguration()
 {
     iop::Config cfg(cmp, "PathReporter");
     pEvents_ReceiveFSM->get_event_handler().register_query(QueryPath::ID);
-    cfg.declare_param<std::string>("tf_frame_world", p_tf_frame_world, true,
+    cfg.param<std::string>("tf_frame_world", p_tf_frame_world, p_tf_frame_world, true,
         rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
         "TF frame id used in ROS for global coordinates.",
         "Default: 'world'");
-    cfg.declare_param<std::string>("tf_frame_odom", p_tf_frame_odom, true,
+    cfg.param<std::string>("tf_frame_odom", p_tf_frame_odom, p_tf_frame_odom, true,
         rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
         "Frame id of local coordinates published to IOP.",
         "Default: 'odom'");
-    cfg.declare_param<std::string>("utm_zone", p_utm_zone, true,
+    cfg.param<std::string>("utm_zone", p_utm_zone, p_utm_zone, true,
         rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
         "The UTM zone is used for translation of ROS global position coordinates into Lat/Lon coordinates.",
         "Default: '32U'");
-    cfg.declare_param<int>("maximum_points", p_maximum_points, true,
-        rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER,
-        "The maximum points in the local history list",
-        "Default: 15");
-    cfg.declare_param<double>("min_dist", p_min_dist, true,
+    cfg.param<double>("min_dist", p_min_dist, p_min_dist, true,
         rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE,
         "This value is used for historical path. A new point is only added if a distance to previous point is more then min_dist.",
         "Default: 0.25");
-    cfg.param("tf_frame_world", p_tf_frame_world, p_tf_frame_world);
-    cfg.param("tf_frame_odom", p_tf_frame_odom, p_tf_frame_odom);
-    //	cfg.param("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
-    cfg.param("utm_zone", p_utm_zone, p_utm_zone);
-    cfg.param("min_dist", p_min_dist, p_min_dist);
-    cfg.param("maximum_points", p_maximum_points, p_maximum_points);
+    cfg.param<int>("maximum_points", p_maximum_points, p_maximum_points, true,
+        rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER,
+        "The maximum points in the local history list",
+        "Default: 15");
     p_sub_local_path = cfg.create_subscription<nav_msgs::msg::Path>("planned_local_path", 1, std::bind(&PathReporter_ReceiveFSM::p_ros_local_path, this, std::placeholders::_1));
     p_sub_global_path = cfg.create_subscription<nav_msgs::msg::Path>("planned_global_path", 1, std::bind(&PathReporter_ReceiveFSM::p_ros_global_path, this, std::placeholders::_1));
     if (!p_use_tf_for_historical) {

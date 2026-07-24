@@ -85,7 +85,7 @@ protected:
     std::string p_tf_frame_odom;
     std::string p_tf_frame_robot;
     double offset_yaw;
-    int p_map_max_edge_size;
+    int32_t p_map_max_edge_size;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub;
     ReportCostMap2D p_costmap_msg;
 

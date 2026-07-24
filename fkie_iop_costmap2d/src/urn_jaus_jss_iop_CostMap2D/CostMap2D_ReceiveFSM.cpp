@@ -76,28 +76,25 @@ void CostMap2D_ReceiveFSM::setupIopConfiguration()
 {
     iop::Config cfg(cmp, "CostMap2D");
     pEvents_ReceiveFSM->get_event_handler().register_query(QueryCostMap2D::ID);
-    cfg.declare_param<std::string>("tf_frame_odom", p_tf_frame_odom, true,
+    cfg.param<std::string>("tf_frame_odom", p_tf_frame_odom, p_tf_frame_odom, true,
         rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
         "Defines the odometry frame id.",
         "Default: 'odom'");
-    cfg.declare_param<std::string>("tf_frame_robot", p_tf_frame_robot, true,
+    cfg.param<std::string>("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot, true,
         rcl_interfaces::msg::ParameterType::PARAMETER_STRING,
         "Defines the robot frame id.",
         "Default: 'base_link'");
-    cfg.declare_param<int32_t>("map_max_edge_size", p_map_max_edge_size, true,
-        rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER,
-        "Width and height of the map reported by this service. The actual size depends also on resolution of OccupancyGrid.",
-        "Default: 255");
-    cfg.param<std::string>("tf_frame_odom", p_tf_frame_odom, p_tf_frame_odom);
-    cfg.param<std::string>("tf_frame_robot", p_tf_frame_robot, p_tf_frame_robot);
     p_tf_buffer = std::make_unique<tf2_ros::Buffer>(cmp->get_clock());
     p_tf_listener = std::make_shared<tf2_ros::TransformListener>(*p_tf_buffer);
 
     //	std::string prefix = tf::getPrefixParam(pnh);
     //	p_tf_frame_odom = tf::resolve(prefix, p_tf_frame_odom);
     //	p_tf_frame_robot = tf::resolve(prefix, p_tf_frame_robot);
-    cfg.param("offset_yaw", offset_yaw, offset_yaw);
-    cfg.param("map_max_edge_size", p_map_max_edge_size, p_map_max_edge_size);
+    cfg.param<double>("offset_yaw", offset_yaw, offset_yaw);
+    cfg.param<int32_t>("map_max_edge_size", p_map_max_edge_size, p_map_max_edge_size, true,
+        rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER,
+        "Width and height of the map reported by this service. The actual size depends also on resolution of OccupancyGrid.",
+        "Default: 255");
     // ROS subscriber:
     costmap_sub = cfg.create_subscription<nav_msgs::msg::OccupancyGrid>("map", 1, std::bind(&CostMap2D_ReceiveFSM::pMapCallback, this, std::placeholders::_1));
 }
